@@ -1,122 +1,51 @@
 # Unseen PNE
 
-> *Find the forgotten. Prove the need. Route the help. Close the loop.*
+> **Find the forgotten. Prove the need. Route the help. Close the loop.**
 
-A proactive, multi-agent community operations platform that converts one resident intake into a verified support case, auto-generates application packets, routes to the best responder, and follows up until resolution.
+**Unseen PNE** (Proof-of-Need Engine) is a proactive multi-agent AI platform that helps community volunteers and NGOs convert one resident intake into a complete, verifiable support case — from profiling to action packet generation, smart routing, and automated follow-up.
 
----
-
-## Repo Layout
-
-```
-unseen-pne/
-  backend/         FastAPI + Google ADK multi-agent system (Python 3.11)
-  frontend/        Next.js 14 volunteer dashboard (TypeScript + Tailwind)
-  infra/           Cloud Run deployment configs + helper scripts
-  docker-compose.yml
-```
-
-The system is **fully configuration-driven**. Schemes, eligibility rules,
-agent prompts, routing policies and follow-up cadences are all loaded from
-JSON config (and, in production, from the database). Nothing is hardcoded
-in application code.
+It is specifically built for the **Google Hackathon - Community Track**, addressing the problem of scattered government resources, complex paperwork, and people who are left behind (widows, elderly, migrants, single parents, small business owners, etc.).
 
 ---
 
-## Quick start (local dev)
+## 🎯 The Big Idea (Simple Version)
 
-Prerequisites: Node 20+, Python 3.11+ (the `py` launcher on Windows), and
-optionally a Google AI API key for Gemini (the system runs end-to-end
-without one using deterministic stubs).
+There are many government schemes (widow pension, PMAY housing, skill training, etc.), but the people who need them the most often never receive them.
 
-### Option A — run without Docker (recommended on Windows)
+**Unseen PNE** acts as a **team of intelligent AI Robots** that work together:
 
-```powershell
-# Backend
-cd backend
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-py -m pip install --upgrade pip
-py -m pip install -r requirements.txt
-copy .env.example .env
-py -m uvicorn app.main:app --reload --port 8080
-```
-
-Open a second PowerShell window:
-
-```powershell
-cd frontend
-copy .env.example .env.local
-npm install
-npm run dev
-```
-
-### Option B — Docker Compose (Postgres + API + Web)
-
-```powershell
-copy backend\.env.example backend\.env
-copy frontend\.env.example frontend\.env.local
-docker compose up --build
-```
-
-Frontend: http://localhost:3000  
-Backend:  http://localhost:8080  
-API docs: http://localhost:8080/docs
-
-The backend automatically seeds the database on first run from
-`backend/config/*.seed.json`. Edit those files to add schemes, change
-prompts, or tune policies — no code changes needed.
+- **Listener / Profiler Robot** — Understands the resident’s story
+- **Hunter Robot** — Finds relevant schemes using RAG + live search
+- **Matcher Robot** — Checks eligibility with reasoning
+- **Fixer / Validator Robot** — Identifies blockers and minimum path to success
+- **Paperwork / Closer Robot** — Generates full action packets (drafts, letters, checklists)
+- **Router Robot** — Selects best channel (Govt / NGO / CSR / Local)
+- **Watchdog Robot** — Schedules follow-ups and escalations
+- **Insights Robot** — Shows community trends and impact
 
 ---
 
-## Architecture
+## ✨ Key Features
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full system
-design, agent responsibilities, and Google Cloud topology.
-
-```
-Volunteer
-   |
-   v
-[ Frontend (Next.js) ]
-   |  REST/JSON
-   v
-[ Backend API (FastAPI) ]
-   |
-   v
-[ Orchestrator Agent (ADK) ]
-   |
-   +--> Profiler Agent
-   +--> Hunter Agent      ---> Scheme Registry + Vector RAG
-   +--> Matcher Agent     ---> Rules Engine (JSONLogic)
-   +--> Validator Agent   ---> Blocker Detector
-   +--> Closer Agent      ---> Packet Templates
-   +--> Router Agent      ---> Routing Policies
-   +--> Watchdog Agent    ---> Follow-up Scheduler
-   +--> Insights Agent    ---> Anonymized Analytics
-
-State:  Postgres (Cloud SQL)  |  Files: Cloud Storage  |  Events: Pub/Sub
-LLM:    Vertex AI Gemini      |  Search: pgvector / Vertex AI Vector Search
-```
+- End-to-end case workflow (Intake → Resolution)
+- Visible multi-agent collaboration with traces
+- Proof-of-Need Packet generation with citations
+- Digital Exclusion Risk (DER) Scoring
+- Smart Routing + Follow-up Scheduler
+- Human-in-the-loop approval for safety
+- Community Insights Dashboard
+- Configuration-driven (easy to add new schemes)
 
 ---
 
-## Deployment to Google Cloud
+## Tech Stack
 
-```powershell
-cd infra
-./deploy.ps1
-```
-
-This builds Docker images, pushes to Artifact Registry, deploys backend
-and frontend to Cloud Run, and wires the frontend to the backend URL.
+- **AI**: Gemini 2.5 Flash Lite (via Google Generative AI)
+- **Multi-Agent Orchestration**: Custom agents (Google ADK compatible)
+- **Frontend**: Streamlit (Hackathon-optimized)
+- **RAG**: Official government scheme PDFs + Grounded Search
+- **Deployment**: Ready for Google Cloud Run
 
 ---
 
-## Why this wins
-
-- **AI that takes action** (not chat) — generates packets, routes work, schedules follow-ups
-- **Multi-agent + tool use + real data** — Google ADK orchestrating 9 agents over a real rules engine and RAG
-- **End-to-end workflow** — intake → outcome
-- **Zero hardcoding** — every scheme, rule, prompt and policy is data
-- **Trust by design** — citations, confidence thresholds, human approval gates
+## Project Structure
