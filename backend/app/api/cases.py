@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.adk.runner import run_pipeline as adk_run_pipeline
 from app.api import schemas
 from app.api.deps import get_db, require_auth
 from app.core.missed_value import estimate_missed_value_for_case
@@ -264,6 +263,15 @@ def run_full(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
     case = db.get(models.Case, case_id)
     if case is None:
         raise HTTPException(404, "Case not found")
+    try:
+        from app.adk.runner import run_pipeline as adk_run_pipeline
+    except ModuleNotFoundError as exc:
+        if exc.name and exc.name.startswith("google.adk"):
+            raise HTTPException(
+                503,
+                "Agent runner dependency is not installed. Install backend requirements to run the pipeline.",
+            ) from exc
+        raise
     return adk_run_pipeline(db, case_id)
 
 
