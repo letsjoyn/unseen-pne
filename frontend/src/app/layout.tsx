@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
 import { Container } from "@/components/ui/container";
+import { AuthProvider } from "@/lib/auth";
+import { AuthGate } from "@/components/auth-gate";
 import "./globals.css";
 
 const fontSans = Inter({
@@ -33,18 +35,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-bg text-fg antialiased">
         <ThemeProvider>
-          <Nav />
-          <main className="py-10">
-            <Container>{children}</Container>
-          </main>
-          <footer className="border-t">
-            <Container>
-              <div className="flex flex-col items-center justify-between gap-2 py-6 text-xxs text-muted md:flex-row">
-                <span>Configuration-driven. Citations required. Human-in-the-loop.</span>
-                <span className="tabular">Unseen PNE · v0.1</span>
-              </div>
-            </Container>
-          </footer>
+          <AuthProvider>
+            <Nav />
+            <main className="py-10">
+              <Container>
+                <AuthGate>{children}</AuthGate>
+              </Container>
+            </main>
+            <footer className="border-t">
+              <Container>
+                <div className="flex flex-col items-center justify-between gap-2 py-6 text-xxs text-muted md:flex-row">
+                  <span>
+                    Configuration-driven. Citations required. Human-in-the-loop.
+                  </span>
+                  <span className="tabular">Unseen PNE · v0.1</span>
+                </div>
+              </Container>
+            </footer>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

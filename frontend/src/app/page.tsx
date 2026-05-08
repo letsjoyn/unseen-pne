@@ -1,7 +1,31 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ROLE_LANDING, useAuth } from "@/lib/auth";
+import { Icons } from "@/components/ui";
 
 export default function HomePage() {
+  const { session, loading } = useAuth();
+  const router = useRouter();
+
+  // Auto-redirect signed-in users to their role landing
+  useEffect(() => {
+    if (loading) return;
+    if (session) router.replace(ROLE_LANDING[session.role]);
+  }, [loading, session, router]);
+
+  if (loading || session) {
+    return (
+      <div className="flex min-h-[40vh] items-center gap-2 text-sm text-muted">
+        <Icons.Spinner /> Routing you to your dashboard…
+      </div>
+    );
+  }
+
+  // Marketing splash for unauthenticated users
   return (
     <div className="space-y-20">
       <section className="pt-6">
@@ -18,14 +42,12 @@ export default function HomePage() {
           packets drafted, routing chosen, follow-ups scheduled.
         </p>
         <div className="mt-7 flex flex-wrap gap-2">
-          <Link href="/intake">
-            <Button variant="primary">Create new case</Button>
-          </Link>
-          <Link href="/cases">
-            <Button variant="secondary">View cases</Button>
-          </Link>
-          <Link href="/insights">
-            <Button variant="ghost">Insights →</Button>
+          <Link href="/login">
+            <Button variant="primary">
+              <span className="inline-flex items-center gap-1.5">
+                Sign in <Icons.ArrowRightIcon size={12} />
+              </span>
+            </Button>
           </Link>
         </div>
       </section>
