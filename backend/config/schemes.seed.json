@@ -1,0 +1,300 @@
+[
+  {
+    "id": "KA-WIDOW-PENSION",
+    "name": "Karnataka Widow Pension Scheme",
+    "level": "state",
+    "state": "Karnataka",
+    "category": "social_security",
+    "summary": "Monthly pension to widows aged 18+ from low-income households domiciled in Karnataka.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "is_widow" }, true ] },
+        { ">=": [ { "var": "age" }, 18 ] },
+        { "<=": [ { "var": "monthly_income" }, 12000 ] },
+        { "==": [ { "var": "state" }, "Karnataka" ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "death_certificate", "income_certificate", "bank_passbook", "domicile_proof"],
+    "application_channels": [
+      { "name": "sevasindhu_portal", "fit": 0.9, "sla_days": 21, "historical_success": 0.6, "effort": 0.3 },
+      { "name": "taluk_office", "fit": 0.8, "sla_days": 30, "historical_success": 0.7, "effort": 0.5 }
+    ],
+    "estimated_annual_value_inr": 24000,
+    "source_url": "https://sevasindhu.karnataka.gov.in",
+    "source_clause": "Eligibility for Widow Pension under Karnataka Social Security schemes.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "CG-NSAP-IGNWPS",
+    "name": "Indira Gandhi National Widow Pension Scheme (NSAP)",
+    "level": "central",
+    "state": null,
+    "category": "social_security",
+    "summary": "Central component of NSAP for widows aged 40-79 from BPL households.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "is_widow" }, true ] },
+        { ">=": [ { "var": "age" }, 40 ] },
+        { "<=": [ { "var": "age" }, 79 ] },
+        { "<=": [ { "var": "monthly_income" }, 9000 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "death_certificate", "bpl_card", "bank_passbook"],
+    "application_channels": [
+      { "name": "panchayat_office", "fit": 0.85, "sla_days": 30, "historical_success": 0.65, "effort": 0.5 },
+      { "name": "district_social_welfare", "fit": 0.9, "sla_days": 25, "historical_success": 0.7, "effort": 0.4 }
+    ],
+    "estimated_annual_value_inr": 36000,
+    "source_url": "https://nsap.nic.in",
+    "source_clause": "IGNWPS - eligibility 40-79 yrs, BPL household, widow.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "PM-JAY",
+    "name": "Ayushman Bharat - PM Jan Arogya Yojana",
+    "level": "central",
+    "state": null,
+    "category": "health",
+    "summary": "Health cover up to INR 5 lakh per family per year for SECC-listed beneficiaries.",
+    "eligibility_rules": {
+      "and": [
+        { "<=": [ { "var": "monthly_income" }, 15000 ] },
+        { ">=": [ { "var": "household_size" }, 1 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "ration_card"],
+    "application_channels": [
+      { "name": "common_service_centre", "fit": 0.95, "sla_days": 7, "historical_success": 0.8, "effort": 0.2 }
+    ],
+    "estimated_annual_value_inr": 50000,
+    "source_url": "https://pmjay.gov.in",
+    "source_clause": "Ayushman Bharat eligibility based on SECC and ration card linkage.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "PMAY-U",
+    "name": "Pradhan Mantri Awas Yojana - Urban",
+    "level": "central",
+    "state": null,
+    "category": "housing",
+    "summary": "Subsidized housing assistance for EWS / LIG urban households.",
+    "eligibility_rules": {
+      "and": [
+        { "<=": [ { "var": "monthly_income" }, 25000 ] },
+        { ">=": [ { "var": "age" }, 18 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "income_certificate", "bank_passbook", "address_proof"],
+    "application_channels": [
+      { "name": "pmay_portal", "fit": 0.9, "sla_days": 45, "historical_success": 0.55, "effort": 0.4 },
+      { "name": "ulb_office", "fit": 0.85, "sla_days": 60, "historical_success": 0.5, "effort": 0.6 }
+    ],
+    "estimated_annual_value_inr": 60000,
+    "source_url": "https://pmaymis.gov.in",
+    "source_clause": "PMAY-U income criteria for EWS and LIG households.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "UJJWALA-2",
+    "name": "PM Ujjwala Yojana 2.0",
+    "level": "central",
+    "state": null,
+    "category": "energy_subsidy",
+    "summary": "Free LPG connection for women from eligible low-income households.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "gender" }, "female" ] },
+        { "<=": [ { "var": "monthly_income" }, 12000 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "address_proof", "bank_passbook"],
+    "application_channels": [
+      { "name": "lpg_distributor", "fit": 0.95, "sla_days": 14, "historical_success": 0.85, "effort": 0.2 }
+    ],
+    "estimated_annual_value_inr": 3200,
+    "source_url": "https://pmuy.gov.in",
+    "source_clause": "Ujjwala 2.0 eligibility - adult women from poor households.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "PM-SVANIDHI",
+    "name": "PM Street Vendor's AtmaNirbhar Nidhi",
+    "level": "central",
+    "state": null,
+    "category": "livelihood",
+    "summary": "Working capital loans for urban street vendors with progressive credit limits.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "occupation" }, "street vendor" ] },
+        { ">=": [ { "var": "age" }, 18 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "vendor_certificate", "bank_passbook"],
+    "application_channels": [
+      { "name": "svanidhi_portal", "fit": 0.9, "sla_days": 30, "historical_success": 0.7, "effort": 0.3 }
+    ],
+    "estimated_annual_value_inr": 10000,
+    "source_url": "https://pmsvanidhi.mohua.gov.in",
+    "source_clause": "PM SVANidhi - working capital for street vendors operating since March 2020.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "KA-GRUHA-LAKSHMI",
+    "name": "Gruha Lakshmi (Karnataka) - Monthly support to women heads of household",
+    "level": "state",
+    "state": "Karnataka",
+    "category": "social_security",
+    "summary": "Monthly assistance to women heads of household residing in Karnataka.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "gender" }, "female" ] },
+        { ">=": [ { "var": "age" }, 18 ] },
+        { "==": [ { "var": "state" }, "Karnataka" ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "ration_card", "bank_passbook"],
+    "application_channels": [
+      { "name": "sevasindhu_portal", "fit": 0.95, "sla_days": 21, "historical_success": 0.8, "effort": 0.2 }
+    ],
+    "estimated_annual_value_inr": 24000,
+    "source_url": "https://sevasindhu.karnataka.gov.in",
+    "source_clause": "Gruha Lakshmi eligibility for women heads of household in Karnataka.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "KA-ANNA-BHAGYA",
+    "name": "Anna Bhagya (Karnataka) - Free food grain entitlement",
+    "level": "state",
+    "state": "Karnataka",
+    "category": "food_security",
+    "summary": "Additional grain entitlement to BPL ration card holders in Karnataka.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "state" }, "Karnataka" ] },
+        { "<=": [ { "var": "monthly_income" }, 12000 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "ration_card"],
+    "application_channels": [
+      { "name": "fair_price_shop", "fit": 0.95, "sla_days": 3, "historical_success": 0.9, "effort": 0.1 }
+    ],
+    "estimated_annual_value_inr": 8400,
+    "source_url": "https://ahara.kar.nic.in",
+    "source_clause": "Anna Bhagya - additional foodgrain entitlement for BPL households.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "PM-KISAN",
+    "name": "PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)",
+    "level": "central",
+    "state": null,
+    "category": "agriculture",
+    "summary": "INR 6000/year direct income support to small/marginal farming families.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "occupation" }, "farmer" ] },
+        { ">=": [ { "var": "age" }, 18 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "land_record", "bank_passbook"],
+    "application_channels": [
+      { "name": "pmkisan_portal", "fit": 0.9, "sla_days": 30, "historical_success": 0.75, "effort": 0.3 }
+    ],
+    "estimated_annual_value_inr": 6000,
+    "source_url": "https://pmkisan.gov.in",
+    "source_clause": "PM-KISAN: small and marginal farming families with cultivable landholding.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "PRE-MATRIC-SC-ST",
+    "name": "Pre-Matric Scholarship for SC/ST Students",
+    "level": "central",
+    "state": null,
+    "category": "education",
+    "summary": "Scholarship support for SC/ST students in classes IX-X from low-income households.",
+    "eligibility_rules": {
+      "and": [
+        { "<=": [ { "var": "age" }, 18 ] },
+        { "<=": [ { "var": "monthly_income" }, 20000 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "caste_certificate", "income_certificate", "bonafide_certificate"],
+    "application_channels": [
+      { "name": "nsp_portal", "fit": 0.9, "sla_days": 60, "historical_success": 0.6, "effort": 0.4 }
+    ],
+    "estimated_annual_value_inr": 12000,
+    "source_url": "https://scholarships.gov.in",
+    "source_clause": "Pre-Matric SC/ST scholarship eligibility for class IX-X students.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "JANANI-SURAKSHA",
+    "name": "Janani Suraksha Yojana",
+    "level": "central",
+    "state": null,
+    "category": "health",
+    "summary": "Conditional cash assistance for institutional delivery to pregnant women from BPL households.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "gender" }, "female" ] },
+        { ">=": [ { "var": "age" }, 18 ] },
+        { "<=": [ { "var": "monthly_income" }, 12000 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "mcp_card", "bank_passbook"],
+    "application_channels": [
+      { "name": "phc", "fit": 0.95, "sla_days": 14, "historical_success": 0.85, "effort": 0.2 }
+    ],
+    "estimated_annual_value_inr": 1400,
+    "source_url": "https://nhm.gov.in",
+    "source_clause": "JSY benefit eligibility for institutional delivery in LPS states/HPS states.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  },
+  {
+    "id": "KA-VIDYASIRI",
+    "name": "Vidyasiri (Karnataka) - Hostel/Food assistance for students",
+    "level": "state",
+    "state": "Karnataka",
+    "category": "education",
+    "summary": "Financial assistance for backward-class students staying outside govt hostels.",
+    "eligibility_rules": {
+      "and": [
+        { "==": [ { "var": "state" }, "Karnataka" ] },
+        { "<=": [ { "var": "age" }, 26 ] },
+        { "<=": [ { "var": "monthly_income" }, 20000 ] }
+      ]
+    },
+    "required_documents": ["aadhaar", "caste_certificate", "income_certificate", "college_id"],
+    "application_channels": [
+      { "name": "ssp_karnataka_portal", "fit": 0.9, "sla_days": 45, "historical_success": 0.65, "effort": 0.4 }
+    ],
+    "estimated_annual_value_inr": 15000,
+    "source_url": "https://ssp.postmatric.karnataka.gov.in",
+    "source_clause": "Vidyasiri scheme eligibility for hostel/food assistance.",
+    "last_verified_at": "2026-04-01",
+    "version": 1,
+    "active": true
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "key": "weights",
+    "value": { "fit": 0.4, "sla": 0.3, "success": 0.2, "effort": 0.1 },
+    "description": "Default weights for channel scoring."
+  },
+  {
+    "key": "channel_metadata",
+    "value": {
+      "sevasindhu_portal":      { "type": "govt", "is_digital": true,  "language": "en|kn" },
+      "taluk_office":           { "type": "govt", "is_digital": false, "language": "kn" },
+      "panchayat_office":       { "type": "govt", "is_digital": false, "language": "regional" },
+      "district_social_welfare":{ "type": "govt", "is_digital": false, "language": "regional" },
+      "common_service_centre":  { "type": "govt", "is_digital": true,  "language": "regional" },
+      "pmay_portal":            { "type": "govt", "is_digital": true,  "language": "en|hi" },
+      "ulb_office":             { "type": "govt", "is_digital": false, "language": "regional" },
+      "lpg_distributor":        { "type": "ngo_partner", "is_digital": false, "language": "regional" },
+      "svanidhi_portal":        { "type": "govt", "is_digital": true,  "language": "en|hi" },
+      "fair_price_shop":        { "type": "govt", "is_digital": false, "language": "regional" },
+      "nsp_portal":             { "type": "govt", "is_digital": true,  "language": "en|hi" },
+      "phc":                    { "type": "govt", "is_digital": false, "language": "regional" },
+      "pmkisan_portal":         { "type": "govt", "is_digital": true,  "language": "en|hi" },
+      "ssp_karnataka_portal":   { "type": "govt", "is_digital": true,  "language": "en|kn" }
+    },
+    "description": "Channel metadata used when surfacing route plans to operators."
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "key": "default",
+    "value": [
+      { "due_in_days": 3,  "type": "status_check" },
+      { "due_in_days": 7,  "type": "reminder" },
+      { "due_in_days": 14, "type": "escalation_if_no_response" }
+    ],
+    "description": "Generic follow-up cadence for any scheme category."
+  },
+  {
+    "key": "social_security",
+    "value": [
+      { "due_in_days": 5,  "type": "status_check" },
+      { "due_in_days": 12, "type": "reminder" },
+      { "due_in_days": 25, "type": "escalation_if_no_response" }
+    ],
+    "description": "Pension-style schemes have longer SLAs."
+  },
+  {
+    "key": "health",
+    "value": [
+      { "due_in_days": 2, "type": "status_check" },
+      { "due_in_days": 5, "type": "reminder" },
+      { "due_in_days": 10, "type": "escalation_if_no_response" }
+    ],
+    "description": "Health programmes are time-sensitive."
+  },
+  {
+    "key": "housing",
+    "value": [
+      { "due_in_days": 7,  "type": "status_check" },
+      { "due_in_days": 21, "type": "reminder" },
+      { "due_in_days": 45, "type": "escalation_if_no_response" }
+    ],
+    "description": "Housing applications take long; cadence is wider."
+  }
+]

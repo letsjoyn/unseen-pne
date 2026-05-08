@@ -1,0 +1,12 @@
+[
+  {
+    "key": "rollout",
+    "value": {
+      "enabled_states":    ["Karnataka"],
+      "enabled_districts": ["Bengaluru Urban"],
+      "enable_voice_intake":  false,
+      "enable_whatsapp_send": false
+    },
+    "description": "Geographic rollout flags."
+  }
+]

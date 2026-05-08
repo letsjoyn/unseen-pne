@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg:        255 255 255;
+  --fg:         17  17  17;
+  --muted:     115 115 115;
+  --subtle:    248 248 248;
+  --border:    229 229 229;
+  --accent:      0   0   0;
+  --accent-fg: 255 255 255;
+  --success:    22 163  74;
+  --warn:      217 119   6;
+  --danger:    220  38  38;
+}
+
+html.dark {
+  --bg:         10  10  10;
+  --fg:        245 245 245;
+  --muted:     153 153 153;
+  --subtle:     22  22  22;
+  --border:     38  38  38;
+  --accent:    255 255 255;
+  --accent-fg:  10  10  10;
+  --success:    34 197  94;
+  --warn:      234 179   8;
+  --danger:    248 113 113;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+html, body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--fg));
+  font-feature-settings: "cv11", "ss01", "ss03";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+}
+
+::selection {
+  background: rgb(var(--fg));
+  color: rgb(var(--bg));
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.hairline {
+  border-color: rgb(var(--border));
+  border-width: 1px;
+}
+
+.dotline-y > * + * {
+  border-top: 1px solid rgb(var(--border));
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 1px solid rgb(var(--fg));
+  outline-offset: 1px;
+}

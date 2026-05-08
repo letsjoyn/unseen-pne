@@ -1,0 +1,23 @@
+[
+  {
+    "key": "thresholds",
+    "value": {
+      "profile": 0.55,
+      "match":   0.60,
+      "blocker": 0.50,
+      "packet":  0.65
+    },
+    "description": "Minimum confidence per stage. Below threshold -> manual_review."
+  },
+  {
+    "key": "der_weights",
+    "value": {
+      "no_smartphone":  0.30,
+      "no_bank_linked": 0.20,
+      "low_literacy":   0.20,
+      "no_digital_id":  0.15,
+      "no_internet":    0.15
+    },
+    "description": "Digital Exclusion Risk weights."
+  }
+]
