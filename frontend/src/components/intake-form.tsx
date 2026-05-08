@@ -150,7 +150,15 @@ export function IntakeForm() {
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [restored, setRestored] = useState(false);
+  const [samples, setSamples] = useState<
+    Array<{ id: string; title: string; payload: IntakePayload }>
+  >([]);
   const initialLoaded = useRef(false);
+
+  // Load samples
+  useEffect(() => {
+    api.getSampleCases().then(setSamples).catch(console.error);
+  }, []);
 
   // Restore draft on mount
   useEffect(() => {
@@ -214,7 +222,9 @@ export function IntakeForm() {
   }
 
   function loadSample() {
-    setForm(SAMPLE_KAMALA);
+    if (samples.length === 0) return;
+    const random = samples[Math.floor(Math.random() * samples.length)];
+    setForm(random.payload);
   }
 
   function addHouseholdMember() {
@@ -321,7 +331,7 @@ export function IntakeForm() {
           description="Basic facts. The Profiler agent normalizes this into a structured profile."
           right={
             <Button type="button" variant="ghost" size="sm" onClick={loadSample}>
-              Load sample · Kamala D.
+              Load random sample
             </Button>
           }
         />
