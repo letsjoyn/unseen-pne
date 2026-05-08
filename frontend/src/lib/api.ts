@@ -126,4 +126,14 @@ export const api = {
     });
     return handle(res);
   },
+
+  async getSampleCases(): Promise<
+    Array<{ id: string; title: string; payload: IntakePayload }>
+  > {
+    const res = await fetch(`${API_BASE}/api/demo/samples`, {
+      headers: authHeaders(),
+      cache: "no-store",
+    });
+    return handle(res);
+  },
 };
