@@ -34,6 +34,25 @@ const config: Config = {
         tight: "-0.01em",
         tighter: "-0.02em",
       },
+      keyframes: {
+        fadeIn: {
+          from: { opacity: "0", transform: "translateY(2px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        pulseSubtle: {
+          "0%, 100%": { opacity: "0.55" },
+          "50%": { opacity: "1" },
+        },
+        sweep: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+      },
+      animation: {
+        fadeIn: "fadeIn 120ms ease-out",
+        pulseSubtle: "pulseSubtle 1.4s ease-in-out infinite",
+        sweep: "sweep 1.6s ease-in-out infinite",
+      },
     },
   },
   plugins: [],

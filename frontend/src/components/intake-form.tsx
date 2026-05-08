@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import type { IntakePayload } from "@/lib/types";
@@ -11,6 +11,7 @@ import {
   CardHeader,
   Checkbox,
   Field,
+  Icons,
   Input,
   Select,
   Textarea,
@@ -29,6 +30,9 @@ const DOC_OPTIONS = [
   "land_record",
   "mcp_card",
 ];
+
+const STORAGE_KEY = "unseen-pne:intake-draft:v1";
+const AUTOSAVE_MS = 30_000;
 
 const empty: IntakePayload = {
   operator_id: "vol_001",
@@ -54,11 +58,76 @@ const empty: IntakePayload = {
   },
 };
 
+const SAMPLE_KAMALA: IntakePayload = {
+  operator_id: "vol_001",
+  consent: false,
+  notes:
+    "Husband passed in 2019. Daughter in Class 9 at govt school. Lives with elderly mother-in-law.",
+  beneficiary: {
+    name: "Kamala D.",
+    age: 58,
+    gender: "female",
+    phone: "9845012233",
+    email: "",
+    is_widow: true,
+    location: {
+      state: "Karnataka",
+      district: "Bengaluru Urban",
+      pincode: "560066",
+    },
+    household_size: 3,
+    dependents: 2,
+    monthly_income: 2200,
+    occupation: "domestic worker",
+    documents_available: ["aadhaar"],
+    bank_linked: false,
+    smartphone_access: false,
+    internet_access: false,
+    literacy_level: "low",
+  },
+};
+
 export function IntakeForm() {
   const router = useRouter();
   const [form, setForm] = useState<IntakePayload>(empty);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [restored, setRestored] = useState(false);
+  const initialLoaded = useRef(false);
+
+  // Restore draft on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          setForm(parsed as IntakePayload);
+          setRestored(true);
+        }
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      initialLoaded.current = true;
+    }
+  }, []);
+
+  // Auto-save every 30s + on form change (debounced via interval)
+  useEffect(() => {
+    if (!initialLoaded.current || typeof window === "undefined") return;
+    const id = setInterval(() => {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(form));
+        setSavedAt(Date.now());
+      } catch {
+        /* ignore quota */
+      }
+    }, AUTOSAVE_MS);
+    return () => clearInterval(id);
+  }, [form]);
 
   function update<K extends string>(path: K, value: unknown) {
     setForm((prev) => {
@@ -78,35 +147,28 @@ export function IntakeForm() {
       set.has(doc) ? set.delete(doc) : set.add(doc);
       return {
         ...prev,
-        beneficiary: { ...prev.beneficiary, documents_available: Array.from(set) },
+        beneficiary: {
+          ...prev.beneficiary,
+          documents_available: Array.from(set),
+        },
       };
     });
   }
 
   function loadSample() {
-    setForm({
-      operator_id: "vol_001",
-      consent: false,
-      notes: "",
-      beneficiary: {
-        name: "Anita Devi",
-        age: 47,
-        gender: "female",
-        phone: "9876543210",
-        email: "",
-        is_widow: true,
-        location: { state: "Karnataka", district: "Bengaluru Urban", pincode: "560001" },
-        household_size: 4,
-        dependents: 2,
-        monthly_income: 7000,
-        occupation: "domestic worker",
-        documents_available: ["aadhaar", "ration_card", "bank_passbook"],
-        bank_linked: false,
-        smartphone_access: false,
-        internet_access: false,
-        literacy_level: "low",
-      },
-    });
+    setForm(SAMPLE_KAMALA);
+  }
+
+  function clearDraft() {
+    setForm(empty);
+    setRestored(false);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -115,25 +177,52 @@ export function IntakeForm() {
     setSubmitting(true);
     try {
       const created = await api.createCase(form);
-      await api.runFullPipeline(created.case_id);
+      // Fire-and-forget the synchronous backend run; the case detail page
+      // polls events and shows the live AgentProgress UI while it executes.
+      api.runFullPipeline(created.case_id).catch(() => {
+        /* errors surface via case events */
+      });
+      // Wipe the draft only after we've successfully created the case
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+      }
       router.push(`/cases/${created.case_id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
-    } finally {
       setSubmitting(false);
     }
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      {restored && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded border bg-subtle/40 px-4 py-2 text-xxs">
+          <span className="text-muted">
+            <Icons.ClockIcon size={11} className="mr-1.5 inline align-[-2px]" />
+            Restored an unsaved draft from this device.
+          </span>
+          <button
+            type="button"
+            className="text-fg hover:underline"
+            onClick={clearDraft}
+          >
+            Clear draft
+          </button>
+        </div>
+      )}
+
       <Card>
         <CardHeader
           title="Beneficiary"
           description="Basic facts. The Profiler agent normalizes this into a structured profile."
           right={
             <Button type="button" variant="ghost" size="sm" onClick={loadSample}>
-              Load sample
+              Load sample · Kamala D.
             </Button>
           }
         />
@@ -143,7 +232,7 @@ export function IntakeForm() {
               <Input
                 value={form.beneficiary.name}
                 onChange={(e) => update("beneficiary.name", e.target.value)}
-                placeholder="e.g. Anita Devi"
+                placeholder="e.g. Kamala D."
                 required
               />
             </Field>
@@ -224,26 +313,35 @@ export function IntakeForm() {
       </Card>
 
       <Card>
-        <CardHeader title="Location" description="Used for state-scoped scheme matching." />
+        <CardHeader
+          title="Location"
+          description="Used for state-scoped scheme matching."
+        />
         <CardBody>
           <div className="grid gap-4 md:grid-cols-3">
             <Field label="State">
               <Input
                 value={form.beneficiary.location.state}
-                onChange={(e) => update("beneficiary.location.state", e.target.value)}
+                onChange={(e) =>
+                  update("beneficiary.location.state", e.target.value)
+                }
                 required
               />
             </Field>
             <Field label="District">
               <Input
                 value={form.beneficiary.location.district || ""}
-                onChange={(e) => update("beneficiary.location.district", e.target.value)}
+                onChange={(e) =>
+                  update("beneficiary.location.district", e.target.value)
+                }
               />
             </Field>
             <Field label="Pincode">
               <Input
                 value={form.beneficiary.location.pincode || ""}
-                onChange={(e) => update("beneficiary.location.pincode", e.target.value)}
+                onChange={(e) =>
+                  update("beneficiary.location.pincode", e.target.value)
+                }
               />
             </Field>
           </div>
@@ -283,7 +381,9 @@ export function IntakeForm() {
             <Field label="Literacy">
               <Select
                 value={form.beneficiary.literacy_level}
-                onChange={(e) => update("beneficiary.literacy_level", e.target.value)}
+                onChange={(e) =>
+                  update("beneficiary.literacy_level", e.target.value)
+                }
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -292,10 +392,15 @@ export function IntakeForm() {
             </Field>
           </div>
 
-          <Field label="Documents available" hint="Toggle the documents the beneficiary already holds.">
+          <Field
+            label="Documents available"
+            hint="Toggle the documents the beneficiary already holds."
+          >
             <div className="flex flex-wrap gap-1.5 pt-1">
               {DOC_OPTIONS.map((doc) => {
-                const active = form.beneficiary.documents_available.includes(doc);
+                const active = form.beneficiary.documents_available.includes(
+                  doc
+                );
                 return (
                   <button
                     type="button"
@@ -344,18 +449,56 @@ export function IntakeForm() {
 
       {error && (
         <div className="rounded border border-danger/40 bg-danger/5 px-4 py-3 text-sm text-danger">
-          {error}
+          <div className="font-medium">{error}</div>
+          <div className="mt-1 text-xxs">
+            Try again, or check that the backend is reachable at{" "}
+            <span className="font-mono">/api/cases</span>.
+          </div>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <Button variant="primary" type="submit" disabled={!form.consent || submitting}>
-          {submitting ? "Running pipeline…" : "Create + run pipeline"}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          type="submit"
+          disabled={!form.consent || submitting}
+        >
+          {submitting ? (
+            <span className="inline-flex items-center gap-2">
+              <Icons.Spinner size={12} /> Creating case…
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              Create &amp; run pipeline
+              <Icons.ArrowRightIcon size={12} />
+            </span>
+          )}
         </Button>
-        <Button type="reset" variant="ghost" onClick={() => setForm(empty)} disabled={submitting}>
+        <Button
+          type="reset"
+          variant="ghost"
+          onClick={() => {
+            setForm(empty);
+            clearDraft();
+          }}
+          disabled={submitting}
+        >
           Reset
         </Button>
+        {savedAt && (
+          <span className="ml-auto text-xxs tabular text-muted">
+            <Icons.CheckIcon size={11} className="mr-1 inline align-[-2px]" />
+            Draft saved {timeAgo(savedAt)}
+          </span>
+        )}
       </div>
     </form>
   );
+}
+
+function timeAgo(ts: number) {
+  const seconds = Math.floor((Date.now() - ts) / 1000);
+  if (seconds < 60) return `${seconds}s ago`;
+  const m = Math.floor(seconds / 60);
+  return `${m}m ago`;
 }

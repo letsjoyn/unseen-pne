@@ -11,9 +11,30 @@ from sqlalchemy.orm import Session
 from app.adk.runner import run_pipeline as adk_run_pipeline
 from app.api import schemas
 from app.api.deps import get_db, require_auth
+from app.core.missed_value import estimate_missed_value_for_case
 from app.db import models
 
 router = APIRouter(prefix="/api/cases", tags=["cases"])
+
+
+def _intake_name(intake: dict | None) -> str | None:
+    if not intake:
+        return None
+    b = intake.get("beneficiary") if isinstance(intake, dict) else None
+    if isinstance(b, dict):
+        return b.get("name")
+    return None
+
+
+def _intake_district(intake: dict | None) -> str | None:
+    if not intake:
+        return None
+    b = intake.get("beneficiary") if isinstance(intake, dict) else None
+    if isinstance(b, dict):
+        loc = b.get("location") or {}
+        if isinstance(loc, dict):
+            return loc.get("district") or loc.get("state")
+    return None
 
 
 @router.post("", response_model=schemas.CaseSummary)
@@ -53,19 +74,39 @@ def create_case(
     )
 
 
-@router.get("", response_model=list[schemas.CaseSummary])
+@router.get("")
 def list_cases(db: Session = Depends(get_db), _: str = Depends(require_auth)):
     rows = db.query(models.Case).order_by(models.Case.created_at.desc()).all()
-    return [
-        schemas.CaseSummary(
-            case_id=r.id,
-            status=r.status,
-            operator_id=r.operator_id,
-            created_at=r.created_at,
-            updated_at=r.updated_at,
+    out = []
+    for r in rows:
+        profile = db.get(models.BeneficiaryProfile, r.id)
+        eligible = (
+            db.query(models.Match)
+            .filter(models.Match.case_id == r.id)
+            .filter(models.Match.eligibility.in_(["eligible", "probable"]))
+            .count()
         )
-        for r in rows
-    ]
+        total = db.query(models.Match).filter(models.Match.case_id == r.id).count()
+        try:
+            missed = estimate_missed_value_for_case(db, r.id)
+        except Exception:
+            missed = 0
+        out.append(
+            {
+                "case_id": r.id,
+                "status": r.status,
+                "operator_id": r.operator_id,
+                "created_at": r.created_at.isoformat(),
+                "updated_at": r.updated_at.isoformat(),
+                "beneficiary_name": _intake_name(r.intake_payload),
+                "district": _intake_district(r.intake_payload),
+                "der_score": profile.der_score if profile else None,
+                "eligible_count": eligible,
+                "total_matches": total,
+                "missed_value_inr": missed,
+            }
+        )
+    return out
 
 
 @router.get("/{case_id}")
@@ -90,6 +131,18 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
         .order_by(models.CaseEvent.created_at)
         .all()
     )
+
+    scheme_ids = {m.scheme_id for m in matches}
+    schemes_by_id: dict[str, models.Scheme] = {}
+    if scheme_ids:
+        schemes = db.query(models.Scheme).filter(models.Scheme.id.in_(scheme_ids)).all()
+        schemes_by_id = {s.id: s for s in schemes}
+
+    try:
+        missed_value = estimate_missed_value_for_case(db, case_id)
+    except Exception:
+        missed_value = 0
+
     return {
         "case": {
             "id": case.id,
@@ -98,7 +151,10 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
             "created_at": case.created_at.isoformat(),
             "updated_at": case.updated_at.isoformat(),
             "intake": case.intake_payload,
+            "beneficiary_name": _intake_name(case.intake_payload),
+            "district": _intake_district(case.intake_payload),
         },
+        "missed_value_inr": missed_value,
         "profile": (
             {
                 "profile": profile.profile_json,
@@ -112,6 +168,25 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
         "matches": [
             {
                 "scheme_id": m.scheme_id,
+                "scheme_name": (
+                    schemes_by_id[m.scheme_id].name if m.scheme_id in schemes_by_id else None
+                ),
+                "scheme_category": (
+                    schemes_by_id[m.scheme_id].category if m.scheme_id in schemes_by_id else None
+                ),
+                "scheme_summary": (
+                    schemes_by_id[m.scheme_id].summary if m.scheme_id in schemes_by_id else None
+                ),
+                "estimated_annual_value_inr": (
+                    schemes_by_id[m.scheme_id].estimated_annual_value_inr
+                    if m.scheme_id in schemes_by_id
+                    else None
+                ),
+                "required_documents": (
+                    schemes_by_id[m.scheme_id].required_documents
+                    if m.scheme_id in schemes_by_id
+                    else []
+                ),
                 "eligibility": m.eligibility,
                 "score": m.score,
                 "confidence": m.confidence,
@@ -124,6 +199,9 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
         "blockers": [
             {
                 "scheme_id": b.scheme_id,
+                "scheme_name": (
+                    schemes_by_id[b.scheme_id].name if b.scheme_id in schemes_by_id else None
+                ),
                 "blockers": b.blockers,
                 "minimum_path": b.minimum_path,
                 "resolved": b.resolved,
@@ -133,6 +211,11 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
         "packet": (
             {
                 "scheme_id": packet.scheme_id,
+                "scheme_name": (
+                    schemes_by_id[packet.scheme_id].name
+                    if packet.scheme_id in schemes_by_id
+                    else None
+                ),
                 "cover_letter": packet.cover_letter,
                 "email_subject": packet.email_subject,
                 "email_body": packet.email_body,

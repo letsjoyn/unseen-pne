@@ -6,3 +6,8 @@ export { Stat } from "./stat";
 export { Table, THead, TR, TH, TD } from "./table";
 export { Field, Input, Select, Textarea, Checkbox } from "./field";
 export { PageHeader, KV } from "./section";
+export { Modal } from "./modal";
+export { Tabs } from "./tabs";
+export type { TabItem } from "./tabs";
+export { Progress } from "./progress";
+export * as Icons from "./icons";

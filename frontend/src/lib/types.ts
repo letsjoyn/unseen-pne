@@ -4,6 +4,12 @@ export type CaseSummary = {
   operator_id: string;
   created_at: string;
   updated_at: string;
+  beneficiary_name?: string | null;
+  district?: string | null;
+  der_score?: number | null;
+  eligible_count?: number;
+  total_matches?: number;
+  missed_value_inr?: number;
 };
 
 export type Citation = {
@@ -14,6 +20,11 @@ export type Citation = {
 
 export type Match = {
   scheme_id: string;
+  scheme_name?: string | null;
+  scheme_category?: string | null;
+  scheme_summary?: string | null;
+  estimated_annual_value_inr?: number | null;
+  required_documents?: string[];
   eligibility: "eligible" | "probable" | "not_eligible";
   score: number;
   confidence: number;
@@ -29,10 +40,16 @@ export type Blocker = {
   description?: string;
   required_items?: string[];
   next_steps: string[];
+  office?: {
+    name?: string;
+    address?: string;
+    distance_km?: number;
+  };
 };
 
 export type BlockerReport = {
   scheme_id: string;
+  scheme_name?: string | null;
   blockers: Blocker[];
   minimum_path: string[];
   resolved: boolean;
@@ -40,6 +57,7 @@ export type BlockerReport = {
 
 export type Packet = {
   scheme_id: string;
+  scheme_name?: string | null;
   cover_letter: string;
   email_subject: string;
   email_body: string;
@@ -79,7 +97,10 @@ export type CaseDetail = {
     created_at: string;
     updated_at: string;
     intake: Record<string, unknown>;
+    beneficiary_name?: string | null;
+    district?: string | null;
   };
+  missed_value_inr?: number;
   profile: {
     profile: Record<string, unknown>;
     der_score: number | null;
@@ -104,6 +125,7 @@ export type InsightsSummary = {
   approved_packets: number;
   sent_packets: number;
   pending_followups: number;
+  by_category?: Record<string, number>;
 };
 
 export type IntakePayload = {
