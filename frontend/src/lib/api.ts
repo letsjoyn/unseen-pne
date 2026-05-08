@@ -101,4 +101,24 @@ export const api = {
     });
     return handle(res);
   },
+
+  async importSchemes(payload: {
+    schemes: Array<Record<string, unknown>>;
+  }): Promise<{
+    imported: number;
+    rejected: number;
+    results: Array<{
+      row: number;
+      scheme_id: string | null;
+      status: string;
+      message: string;
+    }>;
+  }> {
+    const res = await fetch(`${API_BASE}/api/admin/schemes/import`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handle(res);
+  },
 };

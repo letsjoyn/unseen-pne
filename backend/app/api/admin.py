@@ -48,6 +48,58 @@ def upsert_scheme(
     return {"id": scheme.id, "version": scheme.version}
 
 
+@router.post("/schemes/import", response_model=schemas.ImportSchemesResponse)
+def import_schemes(
+    payload: schemas.ImportSchemesRequest,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
+):
+    imported = 0
+    rejected = 0
+    results: list[schemas.ImportSchemesResult] = []
+
+    for i, row in enumerate(payload.schemes, start=1):
+        data = row.model_dump()
+        scheme_id = data.get("id")
+        try:
+            # Guardrails for "review queue"-style rejection feedback.
+            if not data.get("source_url", "").startswith(("http://", "https://")):
+                raise ValueError("source_url must be a valid http/https URL")
+            if not isinstance(data.get("eligibility_rules"), dict):
+                raise ValueError("eligibility_rules must be a JSON object")
+            if not data.get("name"):
+                raise ValueError("name is required")
+            if not data.get("category"):
+                raise ValueError("category is required")
+
+            scheme = scheme_registry.upsert_scheme(db, data)
+            imported += 1
+            results.append(
+                schemas.ImportSchemesResult(
+                    row=i,
+                    scheme_id=scheme.id,
+                    status="imported",
+                    message=f"Imported as version {scheme.version}",
+                )
+            )
+        except Exception as e:  # noqa: BLE001
+            rejected += 1
+            results.append(
+                schemas.ImportSchemesResult(
+                    row=i,
+                    scheme_id=scheme_id,
+                    status="rejected",
+                    message=str(e),
+                )
+            )
+
+    return schemas.ImportSchemesResponse(
+        imported=imported,
+        rejected=rejected,
+        results=results,
+    )
+
+
 # -------- Prompts --------
 
 

@@ -74,3 +74,20 @@ class UpsertPromptRequest(BaseModel):
     agent: str
     text: str
     output_schema: dict[str, Any] | None = None
+
+
+class ImportSchemesRequest(BaseModel):
+    schemes: list[UpsertSchemeRequest] = Field(default_factory=list)
+
+
+class ImportSchemesResult(BaseModel):
+    row: int
+    scheme_id: str | None = None
+    status: str  # imported|rejected
+    message: str
+
+
+class ImportSchemesResponse(BaseModel):
+    imported: int
+    rejected: int
+    results: list[ImportSchemesResult]
