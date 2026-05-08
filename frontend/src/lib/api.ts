@@ -3,6 +3,7 @@ import type {
   CaseSummary,
   InsightsSummary,
   IntakePayload,
+  PrintRoutingSlip,
 } from "./types";
 import { authToken } from "./auth";
 
@@ -74,7 +75,11 @@ export const api = {
   async approveSendPacket(
     caseId: string,
     payload: { approved_by: string; channels: string[] }
-  ): Promise<{ status: string; channels: string[] }> {
+  ): Promise<{
+    status: string;
+    channels: string[];
+    print_routing_slip?: PrintRoutingSlip | null;
+  }> {
     const res = await fetch(
       `${API_BASE}/api/action-packets/${caseId}/approve-send`,
       {
@@ -96,6 +101,36 @@ export const api = {
 
   async listSchemes(): Promise<Array<Record<string, unknown>>> {
     const res = await fetch(`${API_BASE}/api/admin/schemes`, {
+      headers: authHeaders(),
+      cache: "no-store",
+    });
+    return handle(res);
+  },
+
+  async importSchemes(payload: {
+    schemes: Array<Record<string, unknown>>;
+  }): Promise<{
+    imported: number;
+    rejected: number;
+    results: Array<{
+      row: number;
+      scheme_id: string | null;
+      status: string;
+      message: string;
+    }>;
+  }> {
+    const res = await fetch(`${API_BASE}/api/admin/schemes/import`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handle(res);
+  },
+
+  async getSampleCases(): Promise<
+    Array<{ id: string; title: string; payload: IntakePayload }>
+  > {
+    const res = await fetch(`${API_BASE}/api/demo/samples`, {
       headers: authHeaders(),
       cache: "no-store",
     });

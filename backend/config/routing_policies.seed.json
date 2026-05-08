@@ -23,5 +23,37 @@
       "ssp_karnataka_portal":   { "type": "govt", "is_digital": true,  "language": "en|kn" }
     },
     "description": "Channel metadata used when surfacing route plans to operators."
+  },
+  {
+    "key": "print_routing",
+    "value": {
+      "der_threshold": 0.55,
+      "allow_low_der_without_internet": true
+    },
+    "description": "When to prepare a volunteer-assisted print routing slip for last-mile delivery."
+  },
+  {
+    "key": "print_hubs",
+    "value": [
+      {
+        "name": "Ward e-Seva Kiosk",
+        "category": "common_service_centre",
+        "district": "Bengaluru Urban",
+        "state": "Karnataka",
+        "address": "Ward office campus, public service desk",
+        "maps_query": "common service centre near Bengaluru Urban",
+        "open_hours": "09:00-18:00"
+      },
+      {
+        "name": "Janata Stationery & Xerox",
+        "category": "print_shop",
+        "district": "Bengaluru Urban",
+        "state": "Karnataka",
+        "address": "Market road print lane",
+        "maps_query": "xerox print shop near Bengaluru Urban",
+        "open_hours": "08:30-20:00"
+      }
+    ],
+    "description": "Config-driven nearby print hubs used for last-mile printable packet handoff."
   }
 ]

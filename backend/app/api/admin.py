@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.api import schemas
 from app.api.deps import get_db, require_auth
+from app.core.eligibility_pulse import run_living_eligibility_pulse
 from app.db import models
 from app.registry import policy_registry, prompt_registry, scheme_registry
 
@@ -46,6 +47,58 @@ def upsert_scheme(
 ):
     scheme = scheme_registry.upsert_scheme(db, payload.model_dump())
     return {"id": scheme.id, "version": scheme.version}
+
+
+@router.post("/schemes/import", response_model=schemas.ImportSchemesResponse)
+def import_schemes(
+    payload: schemas.ImportSchemesRequest,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
+):
+    imported = 0
+    rejected = 0
+    results: list[schemas.ImportSchemesResult] = []
+
+    for i, row in enumerate(payload.schemes, start=1):
+        data = row.model_dump()
+        scheme_id = data.get("id")
+        try:
+            # Guardrails for "review queue"-style rejection feedback.
+            if not data.get("source_url", "").startswith(("http://", "https://")):
+                raise ValueError("source_url must be a valid http/https URL")
+            if not isinstance(data.get("eligibility_rules"), dict):
+                raise ValueError("eligibility_rules must be a JSON object")
+            if not data.get("name"):
+                raise ValueError("name is required")
+            if not data.get("category"):
+                raise ValueError("category is required")
+
+            scheme = scheme_registry.upsert_scheme(db, data)
+            imported += 1
+            results.append(
+                schemas.ImportSchemesResult(
+                    row=i,
+                    scheme_id=scheme.id,
+                    status="imported",
+                    message=f"Imported as version {scheme.version}",
+                )
+            )
+        except Exception as e:  # noqa: BLE001
+            rejected += 1
+            results.append(
+                schemas.ImportSchemesResult(
+                    row=i,
+                    scheme_id=scheme_id,
+                    status="rejected",
+                    message=str(e),
+                )
+            )
+
+    return schemas.ImportSchemesResponse(
+        imported=imported,
+        rejected=rejected,
+        results=results,
+    )
 
 
 # -------- Prompts --------
@@ -102,3 +155,11 @@ def list_policies(kind: str | None = None, db: Session = Depends(get_db), _: str
     return [
         {"kind": r.kind, "key": r.key, "value": r.value, "description": r.description} for r in rows
     ]
+
+
+@router.post("/eligibility-pulse/run")
+def trigger_eligibility_pulse(
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
+):
+    return run_living_eligibility_pulse(db)

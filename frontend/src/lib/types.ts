@@ -12,6 +12,20 @@ export type CaseSummary = {
   missed_value_inr?: number;
 };
 
+export type HouseholdMember = {
+  name: string;
+  relation: string;
+  age?: number | null;
+  gender?: string | null;
+  occupation?: string | null;
+  education_level?: string | null;
+  monthly_income?: number | null;
+  student: boolean;
+  looking_for_work: boolean;
+  goals: string[];
+  documents_available: string[];
+};
+
 export type Citation = {
   url: string;
   clause: string | null;
@@ -68,6 +82,30 @@ export type Packet = {
   sent_channels: string[];
 };
 
+export type PrintRoutingSlip = {
+  case_id: string;
+  packet_name: string;
+  reason: string;
+  recommended_hub: {
+    name?: string;
+    category?: string;
+    district?: string;
+    state?: string;
+    address?: string;
+    maps_query?: string;
+    open_hours?: string;
+  };
+  instructions: string[];
+  handoff_mode: string;
+};
+
+export type EligibilityPulseFlag = {
+  at: string;
+  new_scheme_ids: string[];
+  upgraded_scheme_ids: string[];
+  current_open_matches: string[];
+};
+
 export type RoutePlan = {
   primary: Record<string, unknown>;
   fallback: Record<string, unknown> | null;
@@ -100,17 +138,50 @@ export type CaseDetail = {
     beneficiary_name?: string | null;
     district?: string | null;
   };
+  household_members: HouseholdMember[];
   missed_value_inr?: number;
   profile: {
     profile: Record<string, unknown>;
     der_score: number | null;
     confidence: number | null;
     missing_fields: string[];
+    family_dependency_graph?: Array<Record<string, unknown>>;
+    household_opportunity_queue?: Array<{
+      member_id: string;
+      name?: string | null;
+      relation?: string | null;
+      goals: string[];
+      recommended_swarm: string;
+    }>;
+    household_swarm_plan?: {
+      case_id: string;
+      household_benefit_ceiling_inr: number;
+      swarms: Array<{
+        member_id: string;
+        name?: string | null;
+        relation?: string | null;
+        recommended_swarm: string;
+        goals: string[];
+        categories: string[];
+        estimated_benefit_ceiling_inr: number;
+        opportunities: Array<{
+          scheme_id: string;
+          name?: string | null;
+          category?: string | null;
+          eligibility: "eligible" | "probable" | "not_eligible";
+          score: number;
+          confidence: number;
+          estimated_annual_value_inr?: number | null;
+        }>;
+      }>;
+    } | null;
   } | null;
   matches: Match[];
   blockers: BlockerReport[];
   packet: Packet | null;
   route_plan: RoutePlan | null;
+  print_routing_slip?: PrintRoutingSlip | null;
+  eligibility_pulse?: EligibilityPulseFlag | null;
   followups: Followup[];
   events: CaseEvent[];
 };
@@ -125,6 +196,7 @@ export type InsightsSummary = {
   approved_packets: number;
   sent_packets: number;
   pending_followups: number;
+  eligibility_pulse_flags?: number;
   by_category?: Record<string, number>;
 };
 
@@ -149,5 +221,6 @@ export type IntakePayload = {
     smartphone_access: boolean;
     internet_access: boolean;
     literacy_level?: string;
+    household_members: HouseholdMember[];
   };
 };

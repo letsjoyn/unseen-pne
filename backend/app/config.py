@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     whatsapp_api_key: str | None = None
     whatsapp_from: str | None = None
 
+    google_maps_api_key: str | None = None
+    google_places_radius_meters: int = 2000
+    google_places_keyword: str = "internet cafe|xerox|print shop|stationery"
+
     cors_origins: str = "http://localhost:3000"
 
     @property

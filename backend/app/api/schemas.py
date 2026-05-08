@@ -14,6 +14,20 @@ class Location(BaseModel):
     pincode: str | None = None
 
 
+class HouseholdMember(BaseModel):
+    name: str
+    relation: str
+    age: int | None = None
+    gender: str | None = None
+    occupation: str | None = None
+    education_level: str | None = None
+    monthly_income: int | None = None
+    student: bool = False
+    looking_for_work: bool = False
+    goals: list[str] = Field(default_factory=list)
+    documents_available: list[str] = Field(default_factory=list)
+
+
 class Beneficiary(BaseModel):
     name: str
     age: int | None = None
@@ -31,6 +45,7 @@ class Beneficiary(BaseModel):
     smartphone_access: bool = False
     internet_access: bool = False
     literacy_level: str | None = None  # "low" | "medium" | "high"
+    household_members: list[HouseholdMember] = Field(default_factory=list)
 
 
 class IntakeRequest(BaseModel):
@@ -74,3 +89,20 @@ class UpsertPromptRequest(BaseModel):
     agent: str
     text: str
     output_schema: dict[str, Any] | None = None
+
+
+class ImportSchemesRequest(BaseModel):
+    schemes: list[UpsertSchemeRequest] = Field(default_factory=list)
+
+
+class ImportSchemesResult(BaseModel):
+    row: int
+    scheme_id: str | None = None
+    status: str  # imported|rejected
+    message: str
+
+
+class ImportSchemesResponse(BaseModel):
+    imported: int
+    rejected: int
+    results: list[ImportSchemesResult]

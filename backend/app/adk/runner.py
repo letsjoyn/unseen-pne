@@ -60,7 +60,9 @@ async def _run_async(db: Session, case_id: str) -> dict[str, Any]:
                     f"Run the full Unseen PNE pipeline for case {case_id}. "
                     "Each agent should call its tools to read/write state. "
                     "The Profiler runs first, then Hunter, Matcher, Validator, "
-                    "Closer, Router, Watchdog."
+                    "Closer, Router, Watchdog. If the household opportunity queue "
+                    "contains dependents, the Hunter should plan those support "
+                    "swarms in parallel before the case continues."
                 )
             )
         ],

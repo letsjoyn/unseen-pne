@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import {
   Badge,
+  Button,
   Icons,
   PageHeader,
   Table,
@@ -33,14 +34,78 @@ export default function AdminSchemesPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [level, setLevel] = useState<string>("all");
+  const [importText, setImportText] = useState("");
+  const [importBusy, setImportBusy] = useState(false);
+  const [importSummary, setImportSummary] = useState<string | null>(null);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+
+  async function refresh() {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await api.listSchemes();
+      setRows(r as unknown as SchemeRow[]);
+    } catch (e) {
+      setError(String((e as Error)?.message || e));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    api
-      .listSchemes()
-      .then((r) => setRows(r as unknown as SchemeRow[]))
-      .catch((e) => setError(String(e?.message || e)))
-      .finally(() => setLoading(false));
+    refresh();
   }, []);
+
+  async function onImport() {
+    setImportSummary(null);
+    setImportErrors([]);
+    setImportBusy(true);
+    try {
+      const parsed = JSON.parse(importText);
+      const schemes = Array.isArray(parsed) ? parsed : parsed?.schemes;
+      if (!Array.isArray(schemes)) {
+        throw new Error("Paste either an array or { schemes: [...] } JSON");
+      }
+      const resp = await api.importSchemes({ schemes });
+      setImportSummary(`Imported ${resp.imported}, rejected ${resp.rejected}`);
+      setImportErrors(
+        resp.results
+          .filter((r) => r.status === "rejected")
+          .map(
+            (r) =>
+              `Row ${r.row}${r.scheme_id ? ` (${r.scheme_id})` : ""}: ${r.message}`
+          )
+      );
+      await refresh();
+    } catch (e) {
+      setImportSummary(null);
+      setImportErrors([String((e as Error)?.message || e)]);
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  function loadExample() {
+    const sample = [
+      {
+        id: "KA-EXAMPLE-SCHEME-001",
+        name: "Example Social Security Scheme",
+        level: "state",
+        state: "Karnataka",
+        category: "social_security",
+        summary: "Demo import row for registry expansion.",
+        eligibility_rules: { and: [{ "==": [{ var: "is_widow" }, true] }] },
+        required_documents: ["aadhaar", "bank_passbook"],
+        application_channels: [{ type: "portal", name: "Seva Sindhu" }],
+        estimated_annual_value_inr: 24000,
+        source_url: "https://example.org/scheme",
+        source_clause: "Eligibility",
+        last_verified_at: new Date().toISOString(),
+        active: true,
+      },
+    ];
+    setImportText(JSON.stringify(sample, null, 2));
+  }
 
   const levels = useMemo(() => {
     const set = new Set<string>();
@@ -78,6 +143,44 @@ export default function AdminSchemesPage() {
           </span>
         }
       />
+
+      <section className="rounded border bg-bg p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="text-sm font-semibold tracking-tight">Bulk import schemes</div>
+            <div className="text-xxs text-muted">
+              Paste JSON rows to upsert many schemes at once.
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={loadExample}>
+              Load example
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onImport}
+              disabled={importBusy || !importText.trim()}
+            >
+              {importBusy ? "Importing…" : "Import JSON"}
+            </Button>
+          </div>
+        </div>
+        <textarea
+          value={importText}
+          onChange={(e) => setImportText(e.target.value)}
+          placeholder='Paste JSON array or {"schemes":[...]}'
+          className="mt-3 h-44 w-full rounded border border-border bg-bg p-3 font-mono text-xs focus:border-fg focus:outline-none"
+        />
+        {importSummary && <div className="mt-2 text-xs text-fg">{importSummary}</div>}
+        {importErrors.length > 0 && (
+          <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xxs text-danger">
+            {importErrors.map((msg, i) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative">

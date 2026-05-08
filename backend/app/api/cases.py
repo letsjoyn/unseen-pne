@@ -36,6 +36,26 @@ def _intake_district(intake: dict | None) -> str | None:
     return None
 
 
+def _latest_print_routing(events: list[models.CaseEvent]) -> dict | None:
+    for event in reversed(events):
+        if event.event_type != "packet.approved_sent":
+            continue
+        payload = event.payload or {}
+        routing = payload.get("print_routing_slip")
+        if isinstance(routing, dict):
+            return routing
+    return None
+
+
+def _latest_pulse_flag(events: list[models.CaseEvent]) -> dict | None:
+    for event in reversed(events):
+        if event.event_type != "eligibility.pulse.flagged":
+            continue
+        if isinstance(event.payload, dict):
+            return event.payload
+    return None
+
+
 @router.post("", response_model=schemas.CaseSummary)
 def create_case(
     payload: schemas.IntakeRequest,
@@ -153,6 +173,9 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
             "beneficiary_name": _intake_name(case.intake_payload),
             "district": _intake_district(case.intake_payload),
         },
+        "household_members": (
+            ((case.intake_payload or {}).get("beneficiary", {}) or {}).get("household_members", [])
+        ),
         "missed_value_inr": missed_value,
         "profile": (
             {
@@ -160,6 +183,15 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
                 "der_score": profile.der_score,
                 "confidence": profile.confidence,
                 "missing_fields": profile.missing_fields,
+                "family_dependency_graph": profile.profile_json.get("family_dependency_graph", []),
+                "household_opportunity_queue": profile.profile_json.get(
+                    "household_opportunity_queue",
+                    [],
+                ),
+                "household_swarm_plan": profile.profile_json.get(
+                    "household_swarm_plan",
+                    None,
+                ),
             }
             if profile
             else None
@@ -236,6 +268,8 @@ def get_case(case_id: str, db: Session = Depends(get_db), _: str = Depends(requi
             if route_plan
             else None
         ),
+        "print_routing_slip": _latest_print_routing(events),
+        "eligibility_pulse": _latest_pulse_flag(events),
         "followups": [
             {
                 "id": t.id,
