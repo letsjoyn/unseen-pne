@@ -19,8 +19,18 @@ export default function HomePage() {
 
   if (loading || session) {
     return (
-      <div className="flex min-h-[40vh] items-center gap-2 text-sm text-muted">
-        <Icons.Spinner /> Routing you to your dashboard…
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-sm text-muted">
+        <div className="flex items-center gap-2">
+          <Icons.Spinner /> Taking you to your dashboard…
+        </div>
+        {session && (
+          <Link
+            href={ROLE_LANDING[session.role]}
+            className="text-xxs text-fg underline-offset-2 hover:underline"
+          >
+            Or click here →
+          </Link>
+        )}
       </div>
     );
   }

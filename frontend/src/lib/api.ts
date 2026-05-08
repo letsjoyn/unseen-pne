@@ -4,15 +4,23 @@ import type {
   InsightsSummary,
   IntakePayload,
 } from "./types";
+import { authToken } from "./auth";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
   "http://localhost:8080";
-const API_TOKEN = process.env.NEXT_PUBLIC_API_TOKEN || "change-me-in-prod";
+
+/** Fallback service token for the rare case where no user is signed in
+ *  (e.g. server-side calls or pre-auth health checks). User-driven calls
+ *  always carry the JWT issued at /api/auth/login.
+ */
+const FALLBACK_TOKEN =
+  process.env.NEXT_PUBLIC_API_TOKEN || "change-me-in-prod";
 
 function authHeaders(extra?: Record<string, string>): HeadersInit {
+  const token = authToken() || FALLBACK_TOKEN;
   return {
-    Authorization: `Bearer ${API_TOKEN}`,
+    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
     ...(extra || {}),
   };
@@ -53,7 +61,9 @@ export const api = {
     return handle<CaseDetail>(res);
   },
 
-  async runFullPipeline(caseId: string): Promise<{ status: string; target_scheme?: string }> {
+  async runFullPipeline(
+    caseId: string
+  ): Promise<{ status: string; target_scheme?: string }> {
     const res = await fetch(`${API_BASE}/api/cases/${caseId}/run`, {
       method: "POST",
       headers: authHeaders(),

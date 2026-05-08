@@ -88,7 +88,7 @@ export default function MePage() {
         {list && list.length > 0 && (
           <p className="mt-3 text-xxs text-muted">
             ({list.length} cases exist in the system but none are linked to{" "}
-            <span className="font-mono">{session?.user_id}</span>.)
+            <span className="font-mono">{session?.email}</span>.)
           </p>
         )}
       </div>

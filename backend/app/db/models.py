@@ -80,6 +80,25 @@ class Policy(Base, TimestampMixin):
     description: Mapped[str | None] = mapped_column(Text)
 
 
+# ----- Identity / auth -----
+
+
+class User(Base, TimestampMixin):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="volunteer"
+    )  # volunteer|ngo_admin|beneficiary|reviewer
+    org: Mapped[str | None] = mapped_column(String(255))
+    case_id: Mapped[str | None] = mapped_column(String(64))  # beneficiaries only
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 # ----- Workflow state -----
 
 

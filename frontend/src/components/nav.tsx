@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { Container } from "@/components/ui/container";
 import { Icons } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ROLE_LABELS, useAuth, type Role } from "@/lib/auth";
+import { ROLE_LABELS, ROLE_LANDING, useAuth, type Role } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 
 type NavLink = {
@@ -15,21 +15,23 @@ type NavLink = {
   icon: React.ComponentType<{ size?: number; className?: string }>;
 };
 
+// Each role's navigation. The first item is always Dashboard / Home so users
+// have an obvious way to get back to their landing page.
 const ROLE_NAVS: Record<Role, NavLink[]> = {
   volunteer: [
-    { href: "/cases", label: "Cases", icon: Icons.ListIcon },
+    { href: "/cases", label: "Dashboard", icon: Icons.HomeIcon },
     { href: "/intake", label: "New intake", icon: Icons.PlusIcon },
     { href: "/insights", label: "Insights", icon: Icons.ChartIcon },
   ],
   ngo_admin: [
-    { href: "/admin/cases", label: "All cases", icon: Icons.ListIcon },
+    { href: "/admin/cases", label: "Dashboard", icon: Icons.HomeIcon },
     { href: "/intake", label: "New intake", icon: Icons.PlusIcon },
     { href: "/admin/insights", label: "Insights", icon: Icons.ChartIcon },
     { href: "/admin/schemes", label: "Schemes", icon: Icons.FileTextIcon },
   ],
   beneficiary: [{ href: "/me", label: "My case", icon: Icons.HomeIcon }],
   reviewer: [
-    { href: "/admin/schemes", label: "Schemes", icon: Icons.FileTextIcon },
+    { href: "/admin/schemes", label: "Dashboard", icon: Icons.HomeIcon },
     { href: "/insights", label: "Insights", icon: Icons.ChartIcon },
   ],
 };
@@ -53,13 +55,18 @@ export function Nav() {
 
   const links = session ? ROLE_NAVS[session.role] : [];
   const onLogin = pathname === "/login";
+  const homeHref = session ? ROLE_LANDING[session.role] : "/login";
 
   return (
     <header className="sticky top-0 z-30 border-b bg-bg/85 backdrop-blur supports-[backdrop-filter]:bg-bg/70">
       <Container>
         <div className="flex h-14 items-center justify-between gap-3">
-          <Link href={session ? "/" : "/login"} className="group flex items-center gap-2.5">
-            <span className="flex h-6 w-6 items-center justify-center rounded-sm border border-fg bg-fg text-bg text-xxs font-semibold">
+          <Link
+            href={homeHref}
+            className="group flex items-center gap-2.5"
+            aria-label="Home"
+          >
+            <span className="flex h-6 w-6 items-center justify-center rounded-sm border border-fg bg-fg text-bg text-xxs font-semibold transition-transform group-hover:scale-105">
               U
             </span>
             <span className="flex items-baseline gap-1.5">
@@ -74,9 +81,21 @@ export function Nav() {
 
           {session && !onLogin && (
             <nav className="hidden items-center gap-1 md:flex">
-              {links.map((l) => {
-                const active =
-                  pathname === l.href || pathname.startsWith(l.href + "/");
+              {links.map((l, i) => {
+                const isHome = i === 0;
+                // Dashboard item is active when you're on its landing or
+                // anywhere "deeper" that doesn't have its own nav item
+                // (e.g. /cases/CASE-XYZ for volunteers).
+                const active = isHome
+                  ? pathname === l.href ||
+                    pathname.startsWith(l.href + "/") ||
+                    !links.some(
+                      (other, j) =>
+                        j !== 0 &&
+                        (pathname === other.href ||
+                          pathname.startsWith(other.href + "/"))
+                    )
+                  : pathname === l.href || pathname.startsWith(l.href + "/");
                 const Icon = l.icon;
                 return (
                   <Link
@@ -98,6 +117,15 @@ export function Nav() {
           )}
 
           <div className="flex items-center gap-2">
+            {session && !onLogin && (
+              <Link
+                href={homeHref}
+                className="inline-flex items-center gap-1 rounded border border-border bg-bg px-2 py-1 text-xxs uppercase tracking-tight text-muted hover:bg-subtle hover:text-fg md:hidden"
+              >
+                <Icons.HomeIcon size={11} />
+                Home
+              </Link>
+            )}
             <ThemeToggle />
             {session ? (
               <div className="relative" ref={menuRef}>
@@ -118,16 +146,17 @@ export function Nav() {
                   <Icons.ChevronDownIcon size={11} className="text-muted" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full z-40 mt-1 w-60 overflow-hidden rounded border bg-bg shadow-lg">
+                  <div className="absolute right-0 top-full z-40 mt-1 w-64 overflow-hidden rounded border bg-bg shadow-lg">
                     <div className="border-b px-3 py-2.5">
                       <div className="text-sm font-semibold tracking-tight">
                         {session.name}
                       </div>
-                      <div className="font-mono text-xxs text-muted">
-                        {session.user_id}
+                      <div className="truncate text-xxs text-muted">
+                        {session.email}
                       </div>
                       <div className="mt-1 text-xxs text-muted">
-                        {ROLE_LABELS[session.role]} · {session.org}
+                        {ROLE_LABELS[session.role]}
+                        {session.org ? ` · ${session.org}` : ""}
                       </div>
                     </div>
                     <button

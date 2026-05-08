@@ -11,14 +11,17 @@ import {
 
 export type Role = "volunteer" | "ngo_admin" | "beneficiary" | "reviewer";
 
+/** What the backend returns for an authenticated user. */
 export type Session = {
-  user_id: string;
+  id: number;
+  email: string;
   name: string;
   role: Role;
-  org: string;
-  /** beneficiary-only: case_id they are tied to */
-  case_id?: string;
-  signed_in_at: string;
+  org: string | null;
+  case_id: string | null;
+  active: boolean;
+  created_at: string;
+  last_login_at: string | null;
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -46,10 +49,15 @@ export const ROLE_LANDING: Record<Role, string> = {
   reviewer: "/admin/schemes",
 };
 
-/** Routes that don't require auth */
-const PUBLIC_ROUTES = ["/login"];
+const PUBLIC_ROUTES = ["/", "/login"];
 
-/** Per-role access control. Volunteer is the most restrictive baseline. */
+export function isPublic(pathname: string): boolean {
+  if (pathname === "/") return true;
+  return PUBLIC_ROUTES.some(
+    (p) => p !== "/" && (pathname === p || pathname.startsWith(p + "/"))
+  );
+}
+
 const ROLE_ROUTES: Record<Role, string[]> = {
   volunteer: ["/", "/cases", "/intake", "/insights"],
   ngo_admin: [
@@ -67,62 +75,172 @@ const ROLE_ROUTES: Record<Role, string[]> = {
 };
 
 export function isAllowed(role: Role, pathname: string): boolean {
-  if (PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/")))
-    return true;
+  if (isPublic(pathname)) return true;
   return ROLE_ROUTES[role].some(
     (allowed) => pathname === allowed || pathname.startsWith(allowed + "/")
   );
 }
 
-const STORAGE_KEY = "unseen-pne:session:v1";
+const TOKEN_KEY = "unseen-pne:jwt:v1";
+
+const API_BASE =
+  (typeof process !== "undefined"
+    ? process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "")
+    : null) || "http://localhost:8080";
+
+function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setStoredToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) window.localStorage.setItem(TOKEN_KEY, token);
+    else window.localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Synchronous read for non-React callers (e.g. api.ts). */
+export function authToken(): string | null {
+  return getStoredToken();
+}
+
+export type SignupArgs = {
+  email: string;
+  password: string;
+  name: string;
+  role: Role;
+  org?: string;
+  case_id?: string;
+};
+
+export type LoginArgs = {
+  email: string;
+  password: string;
+};
 
 type AuthCtx = {
   session: Session | null;
+  token: string | null;
   loading: boolean;
-  signIn: (s: Omit<Session, "signed_in_at">) => Session;
+  error: string | null;
+  signUp: (args: SignupArgs) => Promise<Session>;
+  signIn: (args: LoginArgs) => Promise<Session>;
   signOut: () => void;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+async function postAuth(
+  path: "/api/auth/signup" | "/api/auth/login",
+  body: SignupArgs | LoginArgs
+): Promise<{ token: string; user: Session }> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let detail = `Request failed (${res.status})`;
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setSession(JSON.parse(raw) as Session);
+      const j = await res.json();
+      detail = j.detail || j.message || detail;
     } catch {
       /* ignore */
-    } finally {
-      setLoading(false);
+    }
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+async function fetchMe(token: string): Promise<Session> {
+  const res = await fetch(`${API_BASE}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`me failed: ${res.status}`);
+  return res.json();
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // On mount: try to rehydrate from stored token.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const stored = getStoredToken();
+      if (!stored) {
+        if (alive) setLoading(false);
+        return;
+      }
+      try {
+        const me = await fetchMe(stored);
+        if (!alive) return;
+        setToken(stored);
+        setSession(me);
+      } catch {
+        // Token invalid/expired → drop it
+        setStoredToken(null);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const signUp = useCallback(async (args: SignupArgs) => {
+    setError(null);
+    try {
+      const { token: t, user } = await postAuth("/api/auth/signup", args);
+      setStoredToken(t);
+      setToken(t);
+      setSession(user);
+      return user;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Sign up failed";
+      setError(msg);
+      throw e;
     }
   }, []);
 
-  const signIn = useCallback((s: Omit<Session, "signed_in_at">) => {
-    const next: Session = { ...s, signed_in_at: new Date().toISOString() };
+  const signIn = useCallback(async (args: LoginArgs) => {
+    setError(null);
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* ignore */
+      const { token: t, user } = await postAuth("/api/auth/login", args);
+      setStoredToken(t);
+      setToken(t);
+      setSession(user);
+      return user;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Sign in failed";
+      setError(msg);
+      throw e;
     }
-    setSession(next);
-    return next;
   }, []);
 
   const signOut = useCallback(() => {
-    try {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
+    setStoredToken(null);
+    setToken(null);
     setSession(null);
+    setError(null);
   }, []);
 
   const value = useMemo<AuthCtx>(
-    () => ({ session, loading, signIn, signOut }),
-    [session, loading, signIn, signOut]
+    () => ({ session, token, loading, error, signUp, signIn, signOut }),
+    [session, token, loading, error, signUp, signIn, signOut]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

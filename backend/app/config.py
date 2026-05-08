@@ -30,6 +30,11 @@ class Settings(BaseSettings):
 
     api_auth_token: str = "change-me-in-prod"
 
+    # JWT auth (real user auth, separate from the service-level api_auth_token)
+    jwt_secret: str = "dev-secret-change-in-prod-please-rotate-me"
+    jwt_algorithm: str = "HS256"
+    jwt_expires_minutes: int = 60 * 24 * 7  # 7 days
+
     google_api_key: str | None = None
     google_genai_use_vertexai: bool = False
     google_cloud_project: str | None = None

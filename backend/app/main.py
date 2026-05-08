@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from app.api import admin, agents_routes, cases, insights, packet  # noqa: E402
+from app.api import admin, agents_routes, auth_routes, cases, insights, packet  # noqa: E402
 from app.config import get_settings  # noqa: E402
 from app.db.database import SessionLocal, init_db  # noqa: E402
 from app.db.seed import run_seed  # noqa: E402
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     def health():
         return {"status": "ok", "env": settings.app_env}
 
+    app.include_router(auth_routes.router)
     app.include_router(cases.router)
     app.include_router(agents_routes.router)
     app.include_router(packet.router)
