@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.api import schemas
 from app.api.deps import get_db, require_auth
+from app.core.eligibility_pulse import run_living_eligibility_pulse
 from app.db import models
 from app.registry import policy_registry, prompt_registry, scheme_registry
 
@@ -154,3 +155,11 @@ def list_policies(kind: str | None = None, db: Session = Depends(get_db), _: str
     return [
         {"kind": r.kind, "key": r.key, "value": r.value, "description": r.description} for r in rows
     ]
+
+
+@router.post("/eligibility-pulse/run")
+def trigger_eligibility_pulse(
+    db: Session = Depends(get_db),
+    _: str = Depends(require_auth),
+):
+    return run_living_eligibility_pulse(db)

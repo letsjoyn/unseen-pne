@@ -20,10 +20,11 @@ class ProfilerAgent(BaseAgent):
         prompt = self.load_prompt()
         result = self.gemini.generate_json(prompt=prompt, user_payload=case.intake_payload)
 
-        confidence = float(result.get("confidence") or 0.7)
-        missing_fields = list(result.get("missing_fields") or [])
+        enriched = _enrich_profile(result, case.intake_payload)
+        confidence = float(enriched.get("confidence") or 0.7)
+        missing_fields = list(enriched.get("missing_fields") or [])
 
-        flat_profile = _flatten_profile(result, case.intake_payload)
+        flat_profile = _flatten_profile(enriched, case.intake_payload)
         der = compute_der(flat_profile, db=self.db)
 
         existing = self.db.get(BeneficiaryProfile, case_id)
@@ -31,14 +32,14 @@ class ProfilerAgent(BaseAgent):
             self.db.add(
                 BeneficiaryProfile(
                     case_id=case_id,
-                    profile_json=result,
+                    profile_json=enriched,
                     der_score=der,
                     confidence=confidence,
                     missing_fields=missing_fields,
                 )
             )
         else:
-            existing.profile_json = result
+            existing.profile_json = enriched
             existing.der_score = der
             existing.confidence = confidence
             existing.missing_fields = missing_fields
@@ -46,9 +47,57 @@ class ProfilerAgent(BaseAgent):
         case.status = "profiled"
         self.db.commit()
 
-        out = {"profile": result, "der_score": der, "confidence": confidence}
+        out = {"profile": enriched, "der_score": der, "confidence": confidence}
         self.record_event(case_id, out)
         return out
+
+
+def _enrich_profile(profile: dict[str, Any], intake: dict[str, Any]) -> dict[str, Any]:
+    enriched = dict(profile or {})
+    beneficiary = (intake or {}).get("beneficiary", {})
+    members = beneficiary.get("household_members") or []
+
+    dependency_graph = []
+    opportunities = []
+    for idx, member in enumerate(members):
+        if not isinstance(member, dict):
+            continue
+        node_id = member.get("name") or f"member_{idx + 1}"
+        normalized_goals = [str(goal).strip() for goal in member.get("goals", []) if str(goal).strip()]
+        tags: list[str] = []
+        if member.get("student"):
+            tags.append("student_support")
+        if member.get("looking_for_work"):
+            tags.append("employment_support")
+        if member.get("education_level"):
+            tags.append(f"education:{member['education_level']}")
+
+        dependency_graph.append(
+            {
+                "member_id": node_id,
+                "name": member.get("name"),
+                "relation": member.get("relation"),
+                "age": member.get("age"),
+                "student": bool(member.get("student")),
+                "looking_for_work": bool(member.get("looking_for_work")),
+                "goals": normalized_goals,
+                "tags": tags,
+            }
+        )
+        opportunities.append(
+            {
+                "member_id": node_id,
+                "name": member.get("name"),
+                "relation": member.get("relation"),
+                "goals": normalized_goals,
+                "recommended_swarm": _recommended_swarm(member),
+            }
+        )
+
+    enriched.setdefault("household_members", members)
+    enriched["family_dependency_graph"] = dependency_graph
+    enriched["household_opportunity_queue"] = opportunities
+    return enriched
 
 
 def _flatten_profile(profile: dict[str, Any], intake: dict[str, Any]) -> dict[str, Any]:
@@ -75,5 +124,18 @@ def _flatten_profile(profile: dict[str, Any], intake: dict[str, Any]) -> dict[st
         "literacy_level": b.get("literacy_level"),
         "internet_access": b.get("internet_access", False),
         "documents": documents or {d: True for d in (b.get("documents_available") or [])},
+        "household_members": profile.get("household_members") or b.get("household_members") or [],
+        "family_dependency_graph": profile.get("family_dependency_graph") or [],
         "vulnerability_tags": profile.get("vulnerability_tags", []) if isinstance(profile, dict) else [],
     }
+
+
+def _recommended_swarm(member: dict[str, Any]) -> str:
+    if member.get("student"):
+        return "education_support"
+    if member.get("looking_for_work"):
+        return "livelihood_support"
+    relation = str(member.get("relation") or "").lower()
+    if "daughter" in relation or "son" in relation:
+        return "dependent_child_support"
+    return "household_support"

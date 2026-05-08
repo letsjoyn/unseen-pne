@@ -67,12 +67,23 @@ The backend automatically seeds the database on first run from
 `backend/config/*.seed.json`. Edit those files to add schemes, change
 prompts, or tune policies — no code changes needed.
 
+Optional live integrations:
+
+- Set `GOOGLE_MAPS_API_KEY` to enable live Places lookup for print routing.
+- Run `python -m app.jobs.eligibility_pulse_worker` to execute the nightly living-eligibility re-match pass locally.
+
 ---
 
 ## Architecture
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full system
 design, agent responsibilities, and Google Cloud topology.
+
+For demo prep and QA:
+
+- [`docs/DEMO_RUNBOOK.md`](docs/DEMO_RUNBOOK.md) - best-case judge flow and talk track
+- [`docs/QA_CHECKLIST.md`](docs/QA_CHECKLIST.md) - regression checklist before demos/merges
+- [`backend/config/demo_cases.seed.json`](backend/config/demo_cases.seed.json) - reusable synthetic case pack
 
 ```
 Volunteer

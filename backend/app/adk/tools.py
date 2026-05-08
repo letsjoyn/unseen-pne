@@ -19,6 +19,7 @@ from app.adk.session_ctx import get_context
 from app.agents.profiler_agent import _flatten_profile
 from app.core import rules_engine
 from app.core.der_score import compute_der
+from app.core.household_swarm import plan_household_swarm as build_household_swarm_plan
 from app.db import models
 from app.registry import policy_registry, scheme_registry
 
@@ -113,6 +114,44 @@ def list_candidate_schemes(state: str | None = None) -> dict[str, Any]:
             for s in schemes
         ]
     }
+
+
+def get_household_opportunity_queue() -> dict[str, Any]:
+    """Return the household opportunity queue extracted by the Profiler for the current case."""
+
+    ctx = get_context()
+    profile = ctx.db.get(models.BeneficiaryProfile, ctx.case_id)
+    if profile is None:
+        return {"queue": []}
+    queue = (profile.profile_json or {}).get("household_opportunity_queue") or []
+    return {"queue": queue}
+
+
+def plan_household_swarm() -> dict[str, Any]:
+    """Plan dependent-member swarms and persist them into the saved profile JSON."""
+
+    ctx = get_context()
+    case = ctx.db.get(models.Case, ctx.case_id)
+    profile = ctx.db.get(models.BeneficiaryProfile, ctx.case_id)
+    if case is None or profile is None:
+        return {"error": "missing_case_or_profile"}
+
+    flat = _flatten_profile(profile.profile_json, case.intake_payload)
+    plan = build_household_swarm_plan(
+        ctx.db,
+        case_id=ctx.case_id,
+        profile_json=profile.profile_json,
+        flat_profile=flat,
+    )
+    updated_profile = dict(profile.profile_json or {})
+    updated_profile["household_swarm_plan"] = plan
+    updated_profile["household_opportunity_queue"] = _merge_swarm_queue(
+        updated_profile.get("household_opportunity_queue") or [],
+        plan,
+    )
+    profile.profile_json = updated_profile
+    ctx.db.commit()
+    return plan
 
 
 def evaluate_eligibility(scheme_id: str) -> dict[str, Any]:
@@ -448,3 +487,19 @@ def record_event(event_type: str, payload_json: str = "") -> dict[str, Any]:
     )
     ctx.db.commit()
     return {"recorded": True}
+
+
+def _merge_swarm_queue(queue: list[Any], plan: dict[str, Any]) -> list[Any]:
+    swarms_by_member = {
+        str(swarm.get("member_id")): swarm
+        for swarm in plan.get("swarms", [])
+        if isinstance(swarm, dict) and swarm.get("member_id") is not None
+    }
+    merged = []
+    for item in queue:
+        if not isinstance(item, dict):
+            merged.append(item)
+            continue
+        swarm = swarms_by_member.get(str(item.get("member_id")))
+        merged.append({**item, "opportunities": swarm.get("opportunities", []) if swarm else []})
+    return merged

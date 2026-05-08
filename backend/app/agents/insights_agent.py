@@ -10,7 +10,7 @@ from sqlalchemy import func
 
 from app.agents.base import BaseAgent
 from app.core.missed_value import estimate_missed_value_for_case
-from app.db.models import ActionPacket, BeneficiaryProfile, Case, FollowupTask, Match, Scheme
+from app.db.models import ActionPacket, BeneficiaryProfile, Case, CaseEvent, FollowupTask, Match, Scheme
 
 
 class InsightsAgent(BaseAgent):
@@ -67,6 +67,14 @@ class InsightsAgent(BaseAgent):
             or 0
         )
 
+        pulse_flags = (
+            self.db.query(func.count())
+            .select_from(CaseEvent)
+            .filter(CaseEvent.event_type == "eligibility.pulse.flagged")
+            .scalar()
+            or 0
+        )
+
         # Eligible / probable matches grouped by scheme category
         cat_rows = (
             self.db.query(Scheme.category, func.count(Match.id))
@@ -87,5 +95,6 @@ class InsightsAgent(BaseAgent):
             "approved_packets": int(approved_packets),
             "sent_packets": int(sent_packets),
             "pending_followups": int(pending_followups),
+            "eligibility_pulse_flags": int(pulse_flags),
             "by_category": by_category,
         }

@@ -42,7 +42,10 @@ _PROFILER_FALLBACK = (
 _HUNTER_FALLBACK = (
     "You are the Hunter. Call list_candidate_schemes(state=<beneficiary state>) "
     "to fetch all schemes for the beneficiary's state from the saved profile. "
-    "Then briefly summarize how many candidates were found. Do not invent schemes."
+    "Then call get_household_opportunity_queue(). If the queue is non-empty, "
+    "call plan_household_swarm() so dependent-member support swarms are planned "
+    "in parallel. Then briefly summarize how many candidates were found. "
+    "Do not invent schemes."
 )
 
 _MATCHER_FALLBACK = (
@@ -106,7 +109,12 @@ def build_agents(db: Session) -> SequentialAgent:
         name="hunter",
         model=model,
         instruction=_instruction(db, "hunter", _HUNTER_FALLBACK),
-        tools=[FunctionTool(t.list_candidate_schemes), FunctionTool(t.record_event)],
+        tools=[
+            FunctionTool(t.list_candidate_schemes),
+            FunctionTool(t.get_household_opportunity_queue),
+            FunctionTool(t.plan_household_swarm),
+            FunctionTool(t.record_event),
+        ],
         output_key="hunter_result",
     )
 

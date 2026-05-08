@@ -55,6 +55,7 @@ const empty: IntakePayload = {
     smartphone_access: false,
     internet_access: false,
     literacy_level: "low",
+    household_members: [],
   },
 };
 
@@ -84,8 +85,63 @@ const SAMPLE_KAMALA: IntakePayload = {
     smartphone_access: false,
     internet_access: false,
     literacy_level: "low",
+    household_members: [
+      {
+        name: "Anitha D.",
+        relation: "daughter",
+        age: 18,
+        gender: "female",
+        occupation: "student",
+        education_level: "class_12",
+        monthly_income: 0,
+        student: true,
+        looking_for_work: false,
+        goals: ["college scholarship", "hostel support"],
+        documents_available: ["aadhaar", "marks_card"],
+      },
+    ],
   },
 };
+
+function newHouseholdMember(): IntakePayload["beneficiary"]["household_members"][number] {
+  return {
+    name: "",
+    relation: "",
+    age: undefined,
+    gender: "",
+    occupation: "",
+    education_level: "",
+    monthly_income: undefined,
+    student: false,
+    looking_for_work: false,
+    goals: [],
+    documents_available: [],
+  };
+}
+
+function normalizeDraft(raw: unknown): IntakePayload {
+  const parsed = (raw && typeof raw === "object" ? raw : {}) as Partial<IntakePayload>;
+  const beneficiary = (parsed.beneficiary || {}) as Partial<IntakePayload["beneficiary"]>;
+
+  return {
+    ...empty,
+    ...parsed,
+    beneficiary: {
+      ...empty.beneficiary,
+      ...beneficiary,
+      location: {
+        ...empty.beneficiary.location,
+        ...(beneficiary.location || {}),
+      },
+      documents_available: Array.isArray(beneficiary.documents_available)
+        ? beneficiary.documents_available
+        : [],
+      household_members: Array.isArray(beneficiary.household_members)
+        ? beneficiary.household_members
+        : [],
+    },
+  };
+}
 
 export function IntakeForm() {
   const router = useRouter();
@@ -104,7 +160,7 @@ export function IntakeForm() {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === "object") {
-          setForm(parsed as IntakePayload);
+          setForm(normalizeDraft(parsed));
           setRestored(true);
         }
       }
@@ -141,6 +197,8 @@ export function IntakeForm() {
     });
   }
 
+  const householdMembers = form.beneficiary.household_members || [];
+
   function toggleDoc(doc: string) {
     setForm((prev) => {
       const set = new Set(prev.beneficiary.documents_available);
@@ -157,6 +215,47 @@ export function IntakeForm() {
 
   function loadSample() {
     setForm(SAMPLE_KAMALA);
+  }
+
+  function addHouseholdMember() {
+    setForm((prev) => ({
+      ...prev,
+      beneficiary: {
+        ...prev.beneficiary,
+        household_members: [
+          ...prev.beneficiary.household_members,
+          newHouseholdMember(),
+        ],
+      },
+    }));
+  }
+
+  function removeHouseholdMember(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      beneficiary: {
+        ...prev.beneficiary,
+        household_members: prev.beneficiary.household_members.filter(
+          (_, memberIndex) => memberIndex !== index
+        ),
+      },
+    }));
+  }
+
+  function toggleHouseholdGoal(index: number, goal: string) {
+    setForm((prev) => {
+      const members = structuredClone(prev.beneficiary.household_members);
+      const current = new Set(members[index]?.goals || []);
+      current.has(goal) ? current.delete(goal) : current.add(goal);
+      members[index].goals = Array.from(current);
+      return {
+        ...prev,
+        beneficiary: {
+          ...prev.beneficiary,
+          household_members: members,
+        },
+      };
+    });
   }
 
   function clearDraft() {
@@ -427,6 +526,176 @@ export function IntakeForm() {
               onChange={(e) => update("notes", e.target.value)}
             />
           </Field>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Household dependents"
+          description="Capture other family members so the orchestrator can spawn parallel support hunts."
+          right={
+            <Button type="button" variant="ghost" size="sm" onClick={addHouseholdMember}>
+              Add household member
+            </Button>
+          }
+        />
+        <CardBody className="space-y-4">
+          {householdMembers.length === 0 ? (
+            <div className="rounded border border-dashed px-4 py-4 text-sm text-muted">
+              No dependents added yet. Add a daughter, parent, or job-seeking member to unlock parallel opportunity matching.
+            </div>
+          ) : (
+            householdMembers.map((member, index) => (
+              <div key={index} className="rounded border bg-subtle/25 p-4">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-semibold tracking-tight">
+                      Household member {index + 1}
+                    </div>
+                    <div className="text-xxs text-muted">
+                      Used to build the family dependency graph and opportunity queue.
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeHouseholdMember(index)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="Name">
+                    <Input
+                      value={member.name}
+                      onChange={(e) =>
+                        update(
+                          `beneficiary.household_members.${index}.name`,
+                          e.target.value
+                        )
+                      }
+                      placeholder="e.g. Anitha D."
+                    />
+                  </Field>
+                  <Field label="Relation">
+                    <Input
+                      value={member.relation}
+                      onChange={(e) =>
+                        update(
+                          `beneficiary.household_members.${index}.relation`,
+                          e.target.value
+                        )
+                      }
+                      placeholder="daughter / son / mother-in-law"
+                    />
+                  </Field>
+                  <Field label="Age">
+                    <Input
+                      type="number"
+                      value={member.age ?? ""}
+                      onChange={(e) =>
+                        update(
+                          `beneficiary.household_members.${index}.age`,
+                          e.target.value === "" ? undefined : Number(e.target.value)
+                        )
+                      }
+                    />
+                  </Field>
+                  <Field label="Occupation">
+                    <Input
+                      value={member.occupation || ""}
+                      onChange={(e) =>
+                        update(
+                          `beneficiary.household_members.${index}.occupation`,
+                          e.target.value
+                        )
+                      }
+                      placeholder="student / job seeker / caregiver"
+                    />
+                  </Field>
+                  <Field label="Education level">
+                    <Input
+                      value={member.education_level || ""}
+                      onChange={(e) =>
+                        update(
+                          `beneficiary.household_members.${index}.education_level`,
+                          e.target.value
+                        )
+                      }
+                      placeholder="class_12 / diploma / graduate"
+                    />
+                  </Field>
+                  <Field label="Monthly income (₹)">
+                    <Input
+                      type="number"
+                      value={member.monthly_income ?? ""}
+                      onChange={(e) =>
+                        update(
+                          `beneficiary.household_members.${index}.monthly_income`,
+                          e.target.value === "" ? undefined : Number(e.target.value)
+                        )
+                      }
+                    />
+                  </Field>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <Checkbox
+                    label="Currently a student"
+                    checked={member.student}
+                    onChange={(v) =>
+                      update(`beneficiary.household_members.${index}.student`, v)
+                    }
+                  />
+                  <Checkbox
+                    label="Looking for work"
+                    checked={member.looking_for_work}
+                    onChange={(v) =>
+                      update(
+                        `beneficiary.household_members.${index}.looking_for_work`,
+                        v
+                      )
+                    }
+                  />
+                </div>
+
+                <Field
+                  className="mt-4"
+                  label="Goals"
+                  hint="These help the AI decide whether to launch scholarship, livelihood, or household support swarms."
+                >
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {[
+                      "college scholarship",
+                      "hostel support",
+                      "job placement",
+                      "skills training",
+                      "caregiver support",
+                    ].map((goal) => {
+                      const active = member.goals.includes(goal);
+                      return (
+                        <button
+                          key={goal}
+                          type="button"
+                          onClick={() => toggleHouseholdGoal(index, goal)}
+                          className={cn(
+                            "rounded border px-2.5 py-1 text-xxs uppercase tracking-tight transition-colors",
+                            active
+                              ? "border-fg bg-fg text-bg"
+                              : "border-border bg-bg text-muted hover:text-fg hover:bg-subtle"
+                          )}
+                        >
+                          {goal}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Field>
+              </div>
+            ))
+          )}
         </CardBody>
       </Card>
 

@@ -1,23 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
 import { Container } from "@/components/ui/container";
 import { AuthProvider } from "@/lib/auth";
 import { AuthGate } from "@/components/auth-gate";
 import "./globals.css";
-
-const fontSans = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sans",
-});
-
-const fontMono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-mono",
-});
 
 export const metadata: Metadata = {
   title: "Unseen PNE",
@@ -29,7 +16,7 @@ const setInitialTheme = `(function(){try{var t=localStorage.getItem('unseen-them
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fontSans.variable} ${fontMono.variable}`}>
+    <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
       </head>
