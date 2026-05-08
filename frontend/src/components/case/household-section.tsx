@@ -4,6 +4,8 @@ import type { CaseDetail } from "@/lib/types";
 import { Card, CardBody, CardHeader } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
 
+import { formatLabel } from "@/lib/format";
+
 export function HouseholdSection({
   householdMembers,
   profile,
@@ -84,7 +86,7 @@ export function HouseholdSection({
                   <div className="flex flex-wrap gap-1.5">
                     {Array.isArray(node.tags) &&
                       node.tags.map((tag) => (
-                        <Badge key={String(tag)}>{String(tag).replaceAll("_", " ")}</Badge>
+                        <Badge key={String(tag)}>{formatLabel(String(tag))}</Badge>
                       ))}
                   </div>
                 </div>
@@ -119,7 +121,7 @@ export function HouseholdSection({
                       </Badge>
                     ))}
                     <Badge tone="success">
-                      {item.recommended_swarm.replaceAll("_", " ")}
+                      {formatLabel(item.recommended_swarm)}
                     </Badge>
                   </div>
                 </div>

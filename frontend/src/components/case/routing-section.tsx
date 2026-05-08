@@ -1,6 +1,7 @@
 import type { RoutePlan } from "@/lib/types";
 import { Card, CardBody, CardHeader } from "@/components/ui";
 import { Badge } from "@/components/ui/badge";
+import { formatLabel } from "@/lib/format";
 
 export function RoutingSection({ plan }: { plan: RoutePlan | null }) {
   if (!plan) return null;
@@ -15,20 +16,45 @@ export function RoutingSection({ plan }: { plan: RoutePlan | null }) {
       />
       <CardBody>
         <div className="grid gap-4 md:grid-cols-2">
-          <RouteRow label="Primary" name={primary?.name || "—"} tone="success" />
-          {fallback && <RouteRow label="Fallback" name={fallback.name || "—"} tone="warn" />}
+          <RouteRow
+            label="Primary"
+            name={formatLabel(primary?.name)}
+            tone="success"
+          />
+          {fallback && (
+            <RouteRow
+              label="Fallback"
+              name={formatLabel(fallback.name)}
+              tone="warn"
+            />
+          )}
         </div>
 
         {Object.keys(plan.scores || {}).length > 0 && (
-          <div className="mt-5 overflow-x-auto">
+          <div className="mt-5">
             <div className="text-xxs uppercase tracking-tight text-muted">
               Score breakdown
             </div>
-            <div className="mt-2 grid gap-px overflow-hidden rounded border bg-border md:grid-cols-3">
+            <div className="mt-2 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
               {Object.entries(plan.scores).map(([k, v]) => (
-                <div key={k} className="bg-bg px-4 py-2">
-                  <div className="font-mono text-xxs text-muted">{k}</div>
-                  <div className="text-sm font-semibold tabular">{v.toFixed(2)}</div>
+                <div
+                  key={k}
+                  className="rounded border bg-bg px-4 py-2.5 transition-colors hover:bg-subtle/20"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-mono text-xxs text-muted">
+                      {formatLabel(k)}
+                    </div>
+                    <div className="text-sm font-semibold tabular">
+                      {v.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-border">
+                    <div
+                      className="h-full bg-fg transition-all duration-500"
+                      style={{ width: `${Math.min(100, v * 100)}%` }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>

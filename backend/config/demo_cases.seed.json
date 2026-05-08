@@ -144,5 +144,162 @@
         "household_members": []
       }
     }
+  },
+  {
+    "id": "demo_labor_bocw",
+    "title": "Construction worker safety net",
+    "why_it_matters": "Demonstrates BOCW (Building and Other Construction Workers) specific support and livelihood swarms.",
+    "expected_primary_case_outcomes": [
+      "BOCW-REGISTRATION",
+      "PM-JAY",
+      "KA-GRUHA-LAKSHMI"
+    ],
+    "expected_household_swarm_outcomes": [],
+    "expected_demo_highlights": [
+      "Registration for BOCW card should be the primary blocker.",
+      "High impact for accident and health coverage."
+    ],
+    "intake_payload": {
+      "operator_id": "vol_004",
+      "consent": true,
+      "notes": "Daily wage worker at multiple sites. No formal labor contract. Needs safety gear and health insurance.",
+      "beneficiary": {
+        "name": "Manjunath S.",
+        "age": 42,
+        "gender": "male",
+        "phone": "9880011223",
+        "email": "",
+        "is_widow": false,
+        "location": {
+          "state": "Karnataka",
+          "district": "Bengaluru Urban",
+          "pincode": "560048"
+        },
+        "household_size": 4,
+        "dependents": 2,
+        "monthly_income": 12000,
+        "occupation": "construction laborer",
+        "documents_available": ["aadhaar", "voter_id"],
+        "bank_linked": true,
+        "smartphone_access": true,
+        "internet_access": false,
+        "literacy_level": "medium",
+        "household_members": []
+      }
+    }
+  },
+  {
+    "id": "demo_elderly_pension",
+    "title": "Elderly couple healthcare + pension",
+    "why_it_matters": "Shows age-based matching and high healthcare subsidy value for seniors.",
+    "expected_primary_case_outcomes": [
+      "KA-SANDHYA-SURAKSHA",
+      "PM-JAY",
+      "KA-ANNA-BHAGYA"
+    ],
+    "expected_household_swarm_outcomes": [],
+    "expected_demo_highlights": [
+      "Should prioritize Sandhya Suraksha scheme based on age > 65.",
+      "PM-JAY eligibility for senior citizens should be highlighted."
+    ],
+    "intake_payload": {
+      "operator_id": "vol_005",
+      "consent": true,
+      "notes": "Living with spouse. No children to support them. Health is declining. Needs monthly cash support.",
+      "beneficiary": {
+        "name": "Rangappa Rao",
+        "age": 68,
+        "gender": "male",
+        "phone": "9448011223",
+        "email": "",
+        "is_widow": false,
+        "location": {
+          "state": "Karnataka",
+          "district": "Tumakuru",
+          "pincode": "572101"
+        },
+        "household_size": 2,
+        "dependents": 1,
+        "monthly_income": 3000,
+        "occupation": "retired laborer",
+        "documents_available": ["aadhaar", "ration_card"],
+        "bank_linked": true,
+        "smartphone_access": false,
+        "internet_access": false,
+        "literacy_level": "low",
+        "household_members": [
+          {
+            "name": "Savithri Rao",
+            "relation": "spouse",
+            "age": 62,
+            "gender": "female",
+            "occupation": "homemaker",
+            "education_level": "class_5",
+            "monthly_income": 0,
+            "student": false,
+            "looking_for_work": false,
+            "goals": ["healthcare support"],
+            "documents_available": ["aadhaar"]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "demo_student_led_household",
+    "title": "Student-led household (education focus)",
+    "why_it_matters": "Shows how the system handles cases where the primary resident is a student or youth.",
+    "expected_primary_case_outcomes": [
+      "PM-YASASVI",
+      "NMMS-SCHOLARSHIP",
+      "KA-GRUHA-LAKSHMI"
+    ],
+    "expected_household_swarm_outcomes": [],
+    "expected_demo_highlights": [
+      "Should match multiple merit-cum-means scholarships.",
+      "Digital submission route preferred for tech-savvy youth."
+    ],
+    "intake_payload": {
+      "operator_id": "vol_006",
+      "consent": true,
+      "notes": "Father works out of station. Daughter manages household data. High academic performer, needs scholarship to avoid drop-out.",
+      "beneficiary": {
+        "name": "Priya R.",
+        "age": 17,
+        "gender": "female",
+        "phone": "9112233445",
+        "email": "priya.studies@example.org",
+        "is_widow": false,
+        "location": {
+          "state": "Karnataka",
+          "district": "Hubballi",
+          "pincode": "580001"
+        },
+        "household_size": 3,
+        "dependents": 1,
+        "monthly_income": 15000,
+        "occupation": "student",
+        "documents_available": ["aadhaar", "marks_card", "income_certificate"],
+        "bank_linked": true,
+        "smartphone_access": true,
+        "internet_access": true,
+        "literacy_level": "high",
+        "household_members": [
+          {
+            "name": "Rahul R.",
+            "relation": "brother",
+            "age": 12,
+            "gender": "male",
+            "occupation": "student",
+            "education_level": "class_7",
+            "monthly_income": 0,
+            "student": true,
+            "looking_for_work": false,
+            "goals": ["school uniform", "textbooks"],
+            "documents_available": ["aadhaar"]
+          }
+        ]
+      }
+    }
   }
 ]

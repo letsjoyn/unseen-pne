@@ -58,3 +58,10 @@ export function relativeFromNow(value: string | Date): string {
   if (abs < day) return `${sign === "in" ? "in " : ""}${Math.round(abs / hour)}h${sign === "ago" ? " ago" : ""}`;
   return `${sign === "in" ? "in " : ""}${Math.round(abs / day)}d${sign === "ago" ? " ago" : ""}`;
 }
+export function formatLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
