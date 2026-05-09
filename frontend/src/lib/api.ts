@@ -8,8 +8,10 @@ import type {
 import { authToken } from "./auth";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-  "http://localhost:8080";
+  typeof window !== "undefined" && process.env.NODE_ENV === "production"
+    ? "" // Match the vercel.json rewrite to /api
+    : process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
+      "http://localhost:8080";
 
 /** Fallback service token for the rare case where no user is signed in
  *  (e.g. server-side calls or pre-auth health checks). User-driven calls
